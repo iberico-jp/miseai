@@ -136,16 +136,4 @@ async def structure_recipe(data: StructureRequest):
     except Exception as e:
         return {"error": f"AI structuring failed: {str(e)}", "success": False}
 
-@app.get("/health")
-async def health_check():
-    """Health check endpoint for monitoring"""
-    return {
-        "status": "healthy",
-        "service": "MiseAI Backend",
-        "ai_provider": "Groq",
-        "ocr_engine": "Tesseract"
-    }
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
