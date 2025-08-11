@@ -25,19 +25,27 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from '@fullcalendar/interaction';
 
+// PAGE IMPORTS - CLEAN AND ORGANIZED
+import RecipesPage from "./pages/RecipesPage";
+import ChefVaultPage from './pages/ChefVaultPage';
+import InventoryPage from './pages/InventoryPage';
+
 const PromptContext = createContext({
   prompt: "",
   setPrompt: () => {}
 });
+
 const drawerWidth = 220;
+
 const CHEF_QUOTES = [
   "Cooking is an observation-based process. – Alton Brown",
   "Attention to detail is the secret of success in the kitchen. – Gordon Ramsay",
   "Good food from fresh ingredients is enough. – Julia Child",
   "A recipe has no soul. The cook must bring soul to the recipe. – Thomas Keller",
-  "Fear of failure is the only real stumbling block in cooking. – Julia Child" ,
+  "Fear of failure is the only real stumbling block in cooking. – Julia Child",
   "What is creativity? Not coping. - Ferran Adria"
 ];
+
 function getCurrentSeason() {
   const month = new Date().getMonth();
   if ([11, 0, 1].includes(month)) return 'Winter';
@@ -45,21 +53,26 @@ function getCurrentSeason() {
   if ([5, 6, 7].includes(month)) return 'Summer';
   return 'Autumn';
 }
+
 const SEASON_INGREDIENTS = {
   "Summer": { "Fruit": ["Watermelon", "Peach"], "Veges": ["Zucchini"], "Meat": ["Chicken"], "Fish": ["Mackerel"] },
   "Spring": { "Fruit": ["Apricot"], "Veges": ["Asparagus"], "Meat": ["Lamb"], "Fish": ["Sea Bream"] },
   "Autumn": { "Fruit": ["Pear"], "Veges": ["Pumpkin"], "Meat": ["Duck"], "Fish": ["Salmon"] },
   "Winter": { "Fruit": ["Orange"], "Veges": ["Leek"], "Meat": ["Beef (Stew)"], "Fish": ["Cod"] }
 };
+
 const INVENTORY_TYPES = [
   "Dry Store", "Dairy", "Meat", "Fish/Seafood", "Fruits & Vegetables",
   "Pastry", "Spices", "Oils/Fats", "Frozen", "Non-Food"
 ];
+
 const CATEGORY_OPTIONS = [
   "All", "Breakfast", "Casual Restaurant", "Fine Dining", "Room Service", "Pastry", "Afternoon Tea"
 ];
+
 const METRIC_UNITS = ["kg", "g", "l", "ml", "cm"];
 const IMPERIAL_UNITS = ["lb", "oz", "gal", "qt", "pt", "in"];
+
 const STANDARD_INGREDIENTS = [
   "Sugar", "Salt", "Black Pepper", "Olive Oil", "Butter", "Milk", "Eggs",
   "Flour", "Rice", "Chicken Breast", "Beef Tenderloin", "Salmon",
@@ -81,6 +94,7 @@ const sidebarLinks = [
   { label: "Calendar", icon: <EventNoteIcon />, to: "/calendar" },
   { label: "Reservations", icon: <RestaurantMenuIcon />, to: "/reservations" },
 ];
+
 const quickLinks = [
   { label: "Photos", icon: <PhotoCameraIcon />, to: "/photos" },
   { label: "Chat", icon: <ChatIcon />, to: "/chat" },
@@ -241,7 +255,6 @@ function SeasonModal({ open, onClose, season }) {
   );
 }
 
-
 function App() {
   const season = getCurrentSeason();
   const [seasonModal, setSeasonModal] = useState(false);
@@ -256,13 +269,13 @@ function App() {
             <Routes>
               <Route path="/" element={<DashboardPage />} />
               <Route path="/recipes" element={<RecipesPage />} />
+              <Route path="/vault" element={<ChefVaultPage />} />  {/* CLEAN ROUTE */}
               <Route path="/menus" element={<MenusPage />} />
               <Route path="/inventory" element={<InventoryPage />} />
               <Route path="/calendar" element={<CalendarPage />} />
               <Route path="/reservations" element={<ReservationsPage />} />
               <Route path="/photos" element={<PhotosPage />} />
               <Route path="/chat" element={<ChatAssistantPage />} />
-              <Route path="/vault" element={<ChefVaultPage />} />
               <Route path="/share" element={<SectionStub title="Share" />} />
               <Route path="*" element={<SectionStub title="Not Found" />} />
             </Routes>
@@ -273,7 +286,8 @@ function App() {
     </PromptContext.Provider>
   );
 }
-// ------------- Paste the FULL pages for DashboardPage, InventoryPage, RecipesPage, MenusPage, ReservationsPage, CalendarPage, PhotosPage, ChatAssistantPage, SectionStub HERE, in this order, one after the other -----------
+
+// ALL YOUR EXISTING PAGE COMPONENTS - UNCHANGED
 function DashboardPage() {
   const inventory = (() => {
     try { return JSON.parse(localStorage.getItem("inventory")) || []; } catch { return []; }
@@ -319,7 +333,6 @@ function DashboardPage() {
         </Paper>
       </Box>
 
-      {/* Quick Add floating actions */}
       <Box sx={{ display: "flex", gap: 2, mb: 4, flexWrap: "wrap", justifyContent: "flex-end" }}>
         <Button variant="contained" color="primary" component={Link} to="/recipes" startIcon={<MenuBookIcon />}>
           + New Recipe
@@ -379,255 +392,6 @@ function DashboardPage() {
   );
 }
 
-function InventoryPage() {
-  const OUTLETS = CATEGORY_OPTIONS.slice(1); // ["Breakfast", "Casual Restaurant", "Fine Dining", ...]
-  const [outletTab, setOutletTab] = useState(0);
-  const [search, setSearch] = useState("");
-  const [inventory, setInventory] = useState(() => {
-    const saved = localStorage.getItem("inventory");
-    return saved ? JSON.parse(saved) : [
-      { name: "Wagyu Beef", status: "low", qty: 5, unit: "kg", type: "Proteins", location: "Walk-in Cooler", outlet: "Fine Dining" }
-    ];
-  });
-  useEffect(() => {
-    localStorage.setItem("inventory", JSON.stringify(inventory));
-  }, [inventory]);
-  const [addInvOpen, setAddInvOpen] = useState(false);
-  const [newInv, setNewInv] = useState({ name: "", status: "good", qty: "", unit: "kg", type: "", location: "", outlet: OUTLETS[0] });
-
-  const filtered = inventory.filter(item =>
-    (outletTab === 0 || item.outlet === OUTLETS[outletTab - 1]) &&
-    (item.name.toLowerCase().includes(search.toLowerCase()))
-  );
-
-  return (
-    <Paper sx={{ p: 4, background: "#1a1a1a", minHeight: "100vh" }}>
-      <Typography variant="h5" sx={{ color: "#00ffc3", mb: 2 }}>
-        <span role="img" aria-label="inventory">📦</span> Inventory Management
-      </Typography>
-      <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-        <Paper sx={{ p: 2, bgcolor: "#232323", flex: 1 }}>
-          <b>Total Items</b><br />{inventory.length}
-        </Paper>
-        <Button variant="contained" color="success" sx={{ ml: 2, height: 48 }} onClick={() => setAddInvOpen(true)}>
-          + Add Item
-        </Button>
-      </Box>
-      <TextField
-        placeholder="Search inventory..."
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        fullWidth sx={{ mb: 2, bgcolor: "#222", borderRadius: 2 }}
-      />
-      <Tabs value={outletTab} onChange={(_, v) => setOutletTab(v)} sx={{ mb: 2 }}>
-        <Tab label="All" />
-        {OUTLETS.map(o => <Tab key={o} label={o} />)}
-      </Tabs>
-      {filtered.map((item, idx) => (
-        <Paper key={item.name + idx} sx={{ p: 2, mb: 2, bgcolor: "#222", borderRadius: 3, display: "flex", alignItems: "center" }}>
-          <Box sx={{ flex: 1 }}>
-            <Typography fontWeight="bold">{item.name}
-              {item.status === "low" && <Chip label="low" size="small" color="warning" sx={{ ml: 1 }} />}
-              {item.status === "good" && <Chip label="good" size="small" color="success" sx={{ ml: 1 }} />}
-            </Typography>
-            <Typography color="text.secondary" fontSize="small">{item.type} • {item.location}</Typography>
-          </Box>
-          <Box fontWeight="bold" fontSize="1.3rem">{item.qty} {item.unit}</Box>
-        </Paper>
-      ))}
-
-      {/* Add Item Dialog */}
-      <Dialog open={addInvOpen} onClose={() => setAddInvOpen(false)}>
-        <DialogTitle>Add Inventory Item</DialogTitle>
-        <DialogContent>
-          <TextField label="Name" value={newInv.name} onChange={e => setNewInv({ ...newInv, name: e.target.value })} fullWidth sx={{ mb: 2 }} />
-          <TextField label="Status" select value={newInv.status} onChange={e => setNewInv({ ...newInv, status: e.target.value })} fullWidth sx={{ mb: 2 }}>
-            <MenuItem value="good">Good</MenuItem>
-            <MenuItem value="low">Low</MenuItem>
-          </TextField>
-          <TextField label="Quantity" value={newInv.qty} onChange={e => setNewInv({ ...newInv, qty: e.target.value })} fullWidth sx={{ mb: 2 }} />
-          <TextField label="Unit" select value={newInv.unit} onChange={e => setNewInv({ ...newInv, unit: e.target.value })} fullWidth sx={{ mb: 2 }}>
-            {["kg", "g", "l", "ml", "pieces"].map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-          </TextField>
-          <TextField label="Type" value={newInv.type} onChange={e => setNewInv({ ...newInv, type: e.target.value })} fullWidth sx={{ mb: 2 }} />
-          <TextField label="Location" value={newInv.location} onChange={e => setNewInv({ ...newInv, location: e.target.value })} fullWidth sx={{ mb: 2 }} />
-          <TextField label="Outlet" select value={newInv.outlet} onChange={e => setNewInv({ ...newInv, outlet: e.target.value })} fullWidth sx={{ mb: 2 }}>
-            {OUTLETS.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
-          </TextField>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setAddInvOpen(false)}>Cancel</Button>
-          <Button onClick={() => {
-            setInventory([...inventory, newInv]);
-            setAddInvOpen(false);
-            setNewInv({ name: "", status: "good", qty: "", unit: "kg", type: "", location: "", outlet: OUTLETS[0] });
-          }} variant="contained">Add</Button>
-        </DialogActions>
-      </Dialog>
-    </Paper>
-  );
-}
-
-function RecipesPage() {
-  const { prompt, setPrompt } = useContext(PromptContext);
-const [aiResult, setAiResult] = useState("");
-const [loading, setLoading] = useState(false);
-const [snack, setSnack] = useState("");
-const [recipes, setRecipes] = useState(() => {
-  const saved = localStorage.getItem("recipes");
-  return saved ? JSON.parse(saved) : [];
-});
-const [openRecipeModal, setOpenRecipeModal] = useState({ open: false, recipe: null });
-  useEffect(() => { localStorage.setItem("recipes", JSON.stringify(recipes)); }, [recipes]);
-
-  const handleAI = async () => {
-    if (!prompt) return;
-    setLoading(true);
-    try {
-      const res = await axios.post(
-        "https://api.groq.com/openai/v1/chat/completions",
-        {
-          model: "llama3-70b-8192",
-          messages: [
-            { role: "system", content: "You are a world-class chef assistant. ALWAYS use metric units (kg, g, l, ml, cm) in all recipes and menus. Generate a menu or recipe, or answer chef questions, based on the prompt." },
-            { role: "user", content: prompt }
-          ],
-          max_tokens: 650,
-        },
-        {
-          headers: {
-             "Content-Type": "application/json",
-  "Authorization": `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`// <--- Replace with your key
-          }
-        }
-      );
-      setAiResult(res.data.choices[0].message.content);
-      setSnack("AI suggestion ready!");
-    } catch {
-      setSnack("AI failed. Check Groq API key or connection.");
-    } finally { setLoading(false); }
-  };
-
-  const handleSave = () => {
-    setRecipes([...recipes, { prompt, aiResult, date: new Date().toISOString() }]);
-    setPrompt(""); setAiResult(""); setSnack("Saved!");
-  };
-
-  const [search, setSearch] = useState("");
-  const filteredRecipes = recipes.filter(r =>
-  (r.prompt || "").toLowerCase().includes(search.toLowerCase()) ||
-  (r.aiResult || "").toLowerCase().includes(search.toLowerCase())
-);
-
-
-  return (
-    <Box sx={{ p: 4, mt: 3 }}>
-      <Typography variant="h5" sx={{ color: "#00ffc3", mb: 2 }}>AI Menu/Recipe Generator</Typography>
-      <TextField
-        label="Describe your menu/recipe or ask a chef question (e.g. 'Spring vegan brunch', 'How to cook Wagyu?')"
-        value={prompt}
-        onChange={e => setPrompt(e.target.value)}
-        fullWidth multiline minRows={2}
-        sx={{ mb: 2 }}
-      />
-      <Button variant="contained" onClick={handleAI} disabled={loading || !prompt}>Generate</Button>
-      {loading && <CircularProgress sx={{ ml: 2 }} />}
-      {aiResult && (
-        <Box mt={3}>
-          <Typography variant="subtitle1" sx={{ color: "#bdf" }}>AI Suggestion</Typography>
-          <TextField multiline fullWidth minRows={5} value={aiResult} InputProps={{ readOnly: true }} />
-          <Button variant="contained" sx={{ mt: 2 }} onClick={handleSave}>Save to Recipes</Button>
-        </Box>
-      )}
-      <Snackbar open={!!snack} autoHideDuration={3000} onClose={() => setSnack("")} message={snack} />
-
-      {/* Search/filter */}
-      <TextField
-        label="Search saved recipes"
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        fullWidth
-        sx={{ mt: 5, mb: 2, bgcolor: "#232323", borderRadius: 2 }}
-      />
-
-      {/* Organized, Clean Recipe Cards */}
-      <Box>
-        <Typography variant="h6" sx={{ color: "#00ffc3", mb: 1 }}>Saved Suggestions</Typography>
-        {filteredRecipes.length === 0 && <Typography color="text.secondary">No recipes match your search.</Typography>}
-        <Grid container spacing={2}>
-          {filteredRecipes.map((r, i) => (
-            <Grid item xs={12} md={6} key={i}>
-              <Paper sx={{
-                p: 2, mb: 2, bgcolor: "#232323", borderRadius: 3, display: "flex", flexDirection: "column", gap: 1, minHeight: 120,
-                boxShadow: "0 2px 16px #00ffc322"
-              }}>
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <Box>
-                    <Typography fontWeight="bold" sx={{ fontSize: "1.08rem" }}>
-                      {r.prompt} <Chip label="AI" size="small" color="secondary" sx={{ ml: 1 }} />
-                    </Typography>
-                    <Typography color="text.secondary" sx={{ fontSize: "0.9rem" }}>
-                      {new Date(r.date).toLocaleString()}
-                    </Typography>
-                  </Box>
-                  <Box>
-                    <Tooltip title="View Full Recipe">
-                      <IconButton color="primary" onClick={() => setOpenRecipeModal({ open: true, recipe: r })}>👁️</IconButton>
-                    </Tooltip>
-                    <Tooltip title="Share Recipe">
-                      <IconButton color="primary" onClick={() => {
-                        if (navigator.share) {
-                          navigator.share({
-                            title: r.prompt,
-                            text: r.aiResult,
-                          });
-                        } else {
-                          setSnack("Web Share not supported.");
-                        }
-                      }}>
-                        <ShareIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete">
-                      <IconButton color="error" onClick={() => setRecipes(recipes.filter((_, j) => j !== i))}>✖</IconButton>
-                    </Tooltip>
-                  </Box>
-                </Box>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  {(r.aiResult || "").split("\n")[0]?.slice(0, 120)}...
-                </Typography>
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
-        <Dialog open={!!openRecipeModal?.open} onClose={() => setOpenRecipeModal({ open: false, recipe: null })}>
-          <DialogTitle>Recipe</DialogTitle>
-          <DialogContent>
-            <Typography fontWeight="bold">{openRecipeModal?.recipe?.prompt}</Typography>
-            <Typography color="text.secondary" sx={{ whiteSpace: "pre-line" }}>{openRecipeModal?.recipe?.aiResult}</Typography>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOpenRecipeModal({ open: false, recipe: null })}>Close</Button>
-            <Button
-              startIcon={<ShareIcon />}
-              onClick={() => {
-                if (navigator.share) {
-                  navigator.share({
-                    title: openRecipeModal?.recipe?.prompt,
-                    text: openRecipeModal?.recipe?.aiResult,
-                  });
-                } else {
-                  setSnack("Web Share not supported.");
-                }
-              }}
-            >Share</Button>
-          </DialogActions>
-        </Dialog>
-      </Box>
-    </Box>
-  );
-}
-
 function MenusPage() {
   const [menus, setMenus] = useState(() => {
     const saved = localStorage.getItem("menus");
@@ -673,6 +437,7 @@ function MenusPage() {
     </Box>
   );
 }
+
 function ReservationsPage() {
   const [reservations, setReservations] = useState(() => {
     const saved = localStorage.getItem("reservations");
@@ -968,83 +733,6 @@ function ChatAssistantPage() {
   );
 }
 
-function ChefVaultPage({ onInsert }) {
-  const { setPrompt } = useContext(PromptContext);
-  const [vault, setVault] = useState(() => {
-    const saved = localStorage.getItem("chefVault");
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [addDialog, setAddDialog] = useState(false);
-  const [newRecipe, setNewRecipe] = useState({ name: "", ingredients: "", instructions: "" });
-  const [snack, setSnack] = useState("");
-
-  useEffect(() => {
-    localStorage.setItem("chefVault", JSON.stringify(vault));
-  }, [vault]);
-
-  const handleInsert = (recipe) => {
-    if (onInsert) {
-      onInsert(
-        `${recipe.name}\nIngredients:\n${recipe.ingredients}\nInstructions:\n${recipe.instructions}`
-      );
-      setSnack("Inserted into AI prompt!");
-    }
-  };
-
-  return (
-    <Box sx={{ p: 5 }}>
-      <Typography variant="h4" sx={{ color: "#00ffc3", mb: 2 }}>Chef Vault</Typography>
-      <Button variant="contained" color="success" onClick={() => setAddDialog(true)} sx={{ mb: 2 }}>+ Add Recipe</Button>
-      {vault.length === 0 && <Typography color="text.secondary">No chef recipes yet.</Typography>}
-      {vault.map((r, i) => (
-        <Paper key={i} sx={{ p: 2, mb: 2, bgcolor: "#232323", borderRadius: 3 }}>
-          <Typography fontWeight="bold">{r.name}</Typography>
-          <Typography variant="body2" color="text.secondary"><b>Ingredients:</b> {r.ingredients}</Typography>
-          <Typography variant="body2" color="text.secondary"><b>Instructions:</b> {r.instructions}</Typography>
-          <Box sx={{ mt: 1 }}>
-            {onInsert && (
-              <Button
-  size="small"
-  variant="outlined"
-  color="primary"
-  sx={{ mr: 1 }}
-  onClick={() => {
-    setPrompt(
-      `${r.name}\nIngredients:\n${r.ingredients}\nInstructions:\n${r.instructions}`
-    );
-    setSnack("Inserted into AI prompt! Go to Recipes to use.");
-  }}
->
-                Insert to AI
-              </Button>
-            )}
-            <Button size="small" color="error" onClick={() => setVault(vault.filter((_, j) => j !== i))}>Delete</Button>
-          </Box>
-        </Paper>
-      ))}
-      <Dialog open={addDialog} onClose={() => setAddDialog(false)}>
-        <DialogTitle>Add Chef Recipe</DialogTitle>
-        <DialogContent>
-          <TextField label="Recipe Name" value={newRecipe.name} onChange={e => setNewRecipe(r => ({ ...r, name: e.target.value }))} fullWidth sx={{ mb: 2 }} />
-          <TextField label="Ingredients" value={newRecipe.ingredients} onChange={e => setNewRecipe(r => ({ ...r, ingredients: e.target.value }))} fullWidth multiline minRows={2} sx={{ mb: 2 }} />
-          <TextField label="Instructions" value={newRecipe.instructions} onChange={e => setNewRecipe(r => ({ ...r, instructions: e.target.value }))} fullWidth multiline minRows={3} />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setAddDialog(false)}>Cancel</Button>
-          <Button variant="contained" onClick={() => {
-            if (newRecipe.name && newRecipe.ingredients && newRecipe.instructions) {
-              setVault([...vault, newRecipe]);
-              setNewRecipe({ name: "", ingredients: "", instructions: "" });
-              setAddDialog(false);
-            }
-          }}>Add</Button>
-        </DialogActions>
-      </Dialog>
-      <Snackbar open={!!snack} autoHideDuration={3000} onClose={() => setSnack("")} message={snack} />
-    </Box>
-  );
-}
-
 function SectionStub({ title }) {
   return (
     <Box sx={{ p: 5 }}>
@@ -1055,6 +743,5 @@ function SectionStub({ title }) {
     </Box>
   );
 }
-
 
 export default App;
