@@ -52,3 +52,7 @@ GROQ_API_KEY=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
 NODE_ENV=development
 node_modules/
 
+__pycache__/
+*.pyc
+.env
+*.env
