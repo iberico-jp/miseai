@@ -39,16 +39,26 @@ const ProfessionalRecipeCard = ({
 
   // NEW: Updated cost calculation using the pricing service
   const calculateCosts = () => {
-    const costData = calculateRecipeCost(recipe);
-
+  if (!recipe || !recipe.ingredients) {
     return {
-      totalCost: costData.totalCost,
-      perServing: Math.round(costData.totalCost / (recipe.servings || 4)),
-      laborCost: costData.laborCost,
-      ingredientCosts: costData.ingredientCosts,
-      foodCostPercentage: Math.round((costData.ingredientTotal / costData.totalCost) * 100)
+      totalCost: 0,
+      perServing: 0,
+      laborCost: 0,
+      ingredientCosts: [],
+      foodCostPercentage: 0
     };
+  }
+
+  const costData = calculateRecipeCost(recipe);
+
+  return {
+    totalCost: costData.totalCost,
+    perServing: Math.round(costData.totalCost / (recipe.servings || 4)),
+    laborCost: costData.laborCost,
+    ingredientCosts: costData.ingredientCosts,
+    foodCostPercentage: Math.round((costData.ingredientTotal / costData.totalCost) * 100) || 0
   };
+};
 
   // Updated handler to use the new calculation
   const handleCostCalculation = () => {

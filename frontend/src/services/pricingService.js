@@ -1,588 +1,157 @@
-import React, { useState, useEffect } from 'react';
-import { calculateRecipeCost } from '../services/pricingService';
-import {
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, Box, Typography, Grid, Chip, TextField, Paper, Tooltip,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow
-} from '@mui/material';
-import {
-  Print as PrintIcon,
-  Share as ShareIcon,
-  Download as DownloadIcon,
-  Edit as EditIcon,
-  Save as SaveIcon,
-  Calculate as CostIcon,
-  Close as CloseIcon,
-  AttachMoney as MoneyIcon
-} from '@mui/icons-material';
+// Tokyo Hotel Inventory Pricing Database
+export const TOKYO_INVENTORY_PRICING = {
+  // Proteins
+  'wagyu beef': { price: 18000, unit: 'kg', supplier: 'Tokyo Premium Meats' },
+  'beef': { price: 3200, unit: 'kg', supplier: 'Tokyo Premium Meats' },
+  'chicken': { price: 800, unit: 'kg', supplier: 'Fresh Poultry Tokyo' },
+  'pork': { price: 1200, unit: 'kg', supplier: 'Tokyo Premium Meats' },
+  'salmon': { price: 2800, unit: 'kg', supplier: 'Tsukiji Fish Market' },
+  'tuna': { price: 4500, unit: 'kg', supplier: 'Tsukiji Fish Market' },
+  'uni': { price: 450, unit: 'piece', supplier: 'Tsukiji Fish Market' },
+  'sea urchin': { price: 450, unit: 'piece', supplier: 'Tsukiji Fish Market' },
 
-const ProfessionalRecipeCard = ({
-  open,
-  recipe,
-  onClose,
-  onSave,
-  onDelete
-}) => {
-  const [editMode, setEditMode] = useState(false);
-  const [editedRecipe, setEditedRecipe] = useState(recipe?.aiResult || '');
-  const [chefNotes, setChefNotes] = useState('');
-  const [costCalculatorOpen, setCostCalculatorOpen] = useState(false);
+  // Vegetables
+  'shiitake mushrooms': { price: 800, unit: 'kg', supplier: 'Fresh Farm Tokyo' },
+  'mushrooms': { price: 600, unit: 'kg', supplier: 'Fresh Farm Tokyo' },
+  'onions': { price: 180, unit: 'kg', supplier: 'Fresh Farm Tokyo' },
+  'carrots': { price: 220, unit: 'kg', supplier: 'Fresh Farm Tokyo' },
+  'potatoes': { price: 150, unit: 'kg', supplier: 'Fresh Farm Tokyo' },
+  'tomatoes': { price: 380, unit: 'kg', supplier: 'Fresh Farm Tokyo' },
+  'lettuce': { price: 280, unit: 'kg', supplier: 'Fresh Farm Tokyo' },
+  'spinach': { price: 320, unit: 'kg', supplier: 'Fresh Farm Tokyo' },
 
-  const [costData, setCostData] = useState({
-    totalCost: 0,
-    costPerServing: 0,
-    laborCost: 0,
-    ingredients: []
-  });
+  // Grains & Starches
+  'koshihikari rice': { price: 120, unit: 'kg', supplier: 'Niigata Rice Co.' },
+  'rice': { price: 120, unit: 'kg', supplier: 'Niigata Rice Co.' },
+  'flour': { price: 85, unit: 'kg', supplier: 'Tokyo Mills' },
+  'bread': { price: 340, unit: 'kg', supplier: 'Artisan Bakery Tokyo' },
 
-  if (!recipe) return null;
+  // Condiments & Seasonings
+  'soy sauce': { price: 340, unit: 'bottle', supplier: 'Kikkoman Direct' },
+  'miso': { price: 420, unit: 'kg', supplier: 'Traditional Miso Co.' },
+  'sake': { price: 850, unit: 'bottle', supplier: 'Premium Sake Tokyo' },
+  'mirin': { price: 380, unit: 'bottle', supplier: 'Kikkoman Direct' },
+  'sesame oil': { price: 680, unit: 'bottle', supplier: 'Quality Oils Tokyo' },
+  'olive oil': { price: 1200, unit: 'bottle', supplier: 'Quality Oils Tokyo' },
+  'salt': { price: 120, unit: 'kg', supplier: 'Sea Salt Co.' },
+  'sugar': { price: 180, unit: 'kg', supplier: 'Tokyo Sugar Mills' },
 
-  // NEW: Updated cost calculation using the pricing service
-  const calculateCosts = () => {
-    const costData = calculateRecipeCost(recipe);
-
-    return {
-      totalCost: costData.totalCost,
-      perServing: Math.round(costData.totalCost / (recipe.servings || 4)),
-      laborCost: costData.laborCost,
-      ingredientCosts: costData.ingredientCosts,
-      foodCostPercentage: Math.round((costData.ingredientTotal / costData.totalCost) * 100)
-    };
-  };
-
-  // Updated handler to use the new calculation
-  const handleCostCalculation = () => {
-    try {
-      console.log('Recipe data:', recipe); // Debug log
-      const costs = calculateCosts();
-      console.log('Calculated costs:', costs); // Debug log
-
-      if (!costs || costs.totalCost === undefined) {
-        console.error('Cost calculation failed - no data returned');
-        alert('Cost calculation failed. Check console for details.');
-        return;
-      }
-
-      setCostData({
-        totalCost: costs.totalCost,
-        costPerServing: costs.perServing,
-        laborCost: costs.laborCost,
-        ingredients: costs.ingredientCosts || [],
-        servings: recipe.servings || 4,
-        foodCostPercentage: costs.foodCostPercentage
-      });
-
-      setCostCalculatorOpen(true);
-    } catch (error) {
-      console.error('Error in cost calculation:', error);
-      alert('Cost calculation error: ' + error.message);
-    }
-  };
-
-  // Export functions
-  const handlePrint = () => {
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>${recipe.prompt} - MiseAI Professional Recipe</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
-            .header { border-bottom: 3px solid #ff6b35; padding-bottom: 15px; margin-bottom: 25px; }
-            .content { white-space: pre-line; background: #f9f9f9; padding: 20px; border-radius: 8px; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>🍽️ ${recipe.prompt}</h1>
-            <p>Generated: ${new Date(recipe.date).toLocaleString()}</p>
-            <p>🔥 HACCP Validated Recipe</p>
-          </div>
-          <div class="content">${recipe.aiResult}</div>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-    printWindow.print();
-  };
-
-  const handleShare = async () => {
-    const shareText = `🍽️ ${recipe.prompt}\n\n${recipe.aiResult}\n\nGenerated by MiseAI`;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `Recipe: ${recipe.prompt}`,
-          text: shareText
-        });
-      } catch (err) {
-        navigator.clipboard.writeText(shareText);
-        alert('Recipe copied to clipboard!');
-      }
-    } else {
-      navigator.clipboard.writeText(shareText);
-      alert('Recipe copied to clipboard!');
-    }
-  };
-
-  const handleSaveEdits = () => {
-    onSave({ ...recipe, aiResult: editedRecipe });
-    setEditMode(false);
-  };
-
-  return (
-    <>
-      {/* MAIN RECIPE CARD */}
-      <Dialog
-        open={open}
-        onClose={onClose}
-        maxWidth="xl"
-        fullWidth
-        PaperProps={{
-          sx: {
-            maxHeight: '95vh',
-            bgcolor: '#1a1a1a',
-            minWidth: '1000px'
-          }
-        }}
-      >
-        {/* HEADER */}
-        <DialogTitle sx={{
-          bgcolor: '#ff6b35',
-          color: '#fff',
-          p: 3,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <Box>
-            <Typography variant="h5" fontWeight="bold">
-              👨‍🍳 {recipe.prompt}
-            </Typography>
-            <Typography variant="subtitle2" sx={{ opacity: 0.9, mt: 1 }}>
-              Generated: {new Date(recipe.date).toLocaleString()} |
-              🔥 HACCP Validated
-            </Typography>
-          </Box>
-          <Button onClick={onClose} sx={{ color: '#fff', minWidth: 'auto' }}>
-            <CloseIcon />
-          </Button>
-        </DialogTitle>
-
-        {/* TOOLBAR */}
-        <Box sx={{
-          bgcolor: '#2a2a2a',
-          p: 2,
-          display: 'flex',
-          gap: 1,
-          flexWrap: 'wrap'
-        }}>
-          <Button
-            startIcon={<PrintIcon />}
-            onClick={handlePrint}
-            variant="outlined"
-            size="small"
-            sx={{ borderColor: '#00ffc3', color: '#00ffc3' }}
-          >
-            Print
-          </Button>
-
-          <Button
-            startIcon={<ShareIcon />}
-            onClick={handleShare}
-            variant="outlined"
-            size="small"
-            sx={{ borderColor: '#00ffc3', color: '#00ffc3' }}
-          >
-            Share
-          </Button>
-
-          <Button
-            startIcon={<EditIcon />}
-            onClick={() => {
-              setEditMode(!editMode);
-              setEditedRecipe(recipe.aiResult);
-            }}
-            variant={editMode ? "contained" : "outlined"}
-            size="small"
-            sx={{
-              borderColor: '#ff6b35',
-              color: editMode ? '#fff' : '#ff6b35',
-              bgcolor: editMode ? '#ff6b35' : 'transparent'
-            }}
-          >
-            {editMode ? 'Cancel' : 'Edit'}
-          </Button>
-
-          {editMode && (
-            <Button
-              startIcon={<SaveIcon />}
-              onClick={handleSaveEdits}
-              variant="contained"
-              size="small"
-              sx={{ bgcolor: '#00ffc3', color: '#000' }}
-            >
-              Save
-            </Button>
-          )}
-
-          <Button
-            startIcon={<CostIcon />}
-            onClick={handleCostCalculation}
-            variant="contained"
-            size="small"
-            sx={{
-              bgcolor: '#ffd700',
-              color: '#000',
-              '&:hover': { bgcolor: '#ffed4e' }
-            }}
-          >
-            💰 Cost Analysis
-          </Button>
-        </Box>
-
-        {/* CONTENT */}
-        <DialogContent sx={{
-          maxHeight: '60vh',
-          overflowY: 'auto',
-          bgcolor: '#232323',
-          p: 3
-        }}>
-          {/* INFO CARDS */}
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid item xs={12} md={4}>
-              <Paper sx={{ p: 2, bgcolor: '#2a2a2a', textAlign: 'center' }}>
-                <Typography variant="h6" color="#00ffc3">Servings</Typography>
-                <Typography>{recipe.aiResult.match(/servings?:\s*(\d+)/i)?.[1] || '4'}</Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Paper sx={{ p: 2, bgcolor: '#2a2a2a', textAlign: 'center' }}>
-                <MoneyIcon sx={{ color: '#ffd700', fontSize: 30 }} />
-                <Typography variant="h6" color="#ffd700">Cost/Serving</Typography>
-                <Typography>¥{costData.costPerServing || '---'}</Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Paper sx={{ p: 2, bgcolor: '#2a2a2a', textAlign: 'center' }}>
-                <Chip
-                  label="🔥 HACCP SAFE"
-                  sx={{ bgcolor: '#00ff00', color: '#000', fontWeight: 'bold' }}
-                />
-              </Paper>
-            </Grid>
-          </Grid>
-
-          {/* RECIPE CONTENT */}
-          {editMode ? (
-            <TextField
-              fullWidth
-              multiline
-              rows={20}
-              value={editedRecipe}
-              onChange={(e) => setEditedRecipe(e.target.value)}
-              sx={{
-                '& .MuiInputBase-root': {
-                  bgcolor: '#1a1a1a',
-                  fontFamily: 'monospace',
-                  fontSize: '0.95rem'
-                }
-              }}
-            />
-          ) : (
-            <Paper sx={{
-              p: 3,
-              bgcolor: '#1a1a1a',
-              border: '2px solid #ff6b35',
-              minHeight: '400px'
-            }}>
-              <Typography sx={{
-                whiteSpace: "pre-line",
-                lineHeight: 1.8,
-                fontSize: '1rem',
-                fontFamily: 'monospace',
-                color: '#e0e0e0'
-              }}>
-                {recipe.aiResult}
-              </Typography>
-            </Paper>
-          )}
-
-          {/* CHEF NOTES */}
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="h6" sx={{ color: '#00ffc3', mb: 2 }}>
-              👨‍🍳 Chef's Notes
-            </Typography>
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              value={chefNotes}
-              onChange={(e) => setChefNotes(e.target.value)}
-              placeholder="Add professional notes, modifications, or cost observations..."
-              sx={{
-                '& .MuiInputBase-root': {
-                  bgcolor: '#2a2a2a',
-                  fontSize: '0.9rem'
-                }
-              }}
-            />
-          </Box>
-        </DialogContent>
-
-        {/* ACTIONS */}
-        <DialogActions sx={{
-          bgcolor: '#1a1a1a',
-          p: 3,
-          justifyContent: 'space-between'
-        }}>
-          <Button
-            variant="contained"
-            startIcon={<CostIcon />}
-            onClick={handleCostCalculation}
-            sx={{ bgcolor: '#ffd700', color: '#000' }}
-          >
-            💰 Calculate Cost
-          </Button>
-
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              variant="outlined"
-              onClick={onClose}
-              sx={{ borderColor: '#666', color: '#666' }}
-            >
-              Close
-            </Button>
-
-            <Button
-              variant="contained"
-              color="error"
-              onClick={() => {
-                if (confirm('Delete this recipe?')) {
-                  onDelete();
-                  onClose();
-                }
-              }}
-            >
-              Delete
-            </Button>
-          </Box>
-        </DialogActions>
-      </Dialog>
-
-      {/* EDITABLE COST CALCULATOR MODAL */}
-      <Dialog
-        open={costCalculatorOpen}
-        onClose={() => setCostCalculatorOpen(false)}
-        maxWidth="md"
-        fullWidth
-        disableEnforceFocus={true}
-        disableAutoFocus={true}
-        PaperProps={{ sx: { bgcolor: '#1a1a1a' } }}
-      >
-        <DialogTitle sx={{ bgcolor: '#ffd700', color: '#000', fontWeight: 'bold' }}>
-          💰 Cost Analysis - {recipe.prompt}
-        </DialogTitle>
-        <DialogContent sx={{ bgcolor: '#232323' }}>
-
-          {/* COST SUMMARY */}
-          <Grid container spacing={2} sx={{ mb: 3, mt: 1 }}>
-            <Grid item xs={12} md={4}>
-              <Paper sx={{ p: 2, bgcolor: '#2a2a2a', textAlign: 'center' }}>
-                <Typography variant="h4" color="#ffd700">¥{costData.totalCost}</Typography>
-                <Typography color="text.secondary">Total Cost</Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Paper sx={{ p: 2, bgcolor: '#2a2a2a', textAlign: 'center' }}>
-                <Typography variant="h4" color="#00ffc3">¥{costData.costPerServing}</Typography>
-                <Typography color="text.secondary">Per Serving</Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Paper sx={{ p: 2, bgcolor: '#2a2a2a', textAlign: 'center' }}>
-                <Typography variant="h4" color="#ff6b35">¥{costData.laborCost}</Typography>
-                <Typography color="text.secondary">Labor (20%)</Typography>
-              </Paper>
-            </Grid>
-          </Grid>
-
-          {/* Food Cost Percentage */}
-          {costData.foodCostPercentage && (
-            <Box sx={{ mb: 3, p: 2, bgcolor: '#2a2a2a', borderRadius: 2 }}>
-              <Typography variant="h6" color="#00ffc3" mb={1}>
-                📊 Food Cost Percentage: {costData.foodCostPercentage}%
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Industry Standard: 28-35% | Your Recipe: {costData.foodCostPercentage}%
-              </Typography>
-            </Box>
-          )}
-
-          {/* EDITABLE INGREDIENT BREAKDOWN */}
-          <Typography variant="h6" sx={{ color: '#00ffc3', mb: 2 }}>
-            📊 Ingredient Breakdown (Tokyo Prices) - Click to Edit
-          </Typography>
-
-          <TableContainer component={Paper} sx={{ bgcolor: '#2a2a2a' }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ bgcolor: '#ff6b35' }}>
-                  <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Ingredient</TableCell>
-                  <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Amount</TableCell>
-                  <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Cost (¥)</TableCell>
-                  <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {costData.ingredients.map((ing, index) => (
-                  <TableRow key={index} sx={{ '&:hover': { bgcolor: '#333' } }}>
-                    <TableCell sx={{ color: '#e0e0e0' }}>{ing.name}</TableCell>
-                    <TableCell sx={{ color: '#e0e0e0' }}>
-                      <TextField
-                        size="small"
-                        value={ing.amount}
-                        onChange={(e) => {
-                          const updatedIngredients = [...costData.ingredients];
-                          updatedIngredients[index].amount = e.target.value;
-                          setCostData({ ...costData, ingredients: updatedIngredients });
-                        }}
-                        sx={{
-                          '& .MuiInputBase-root': {
-                            bgcolor: '#1a1a1a',
-                            color: '#fff',
-                            fontSize: '0.85rem',
-                            height: '32px'
-                          }
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <TextField
-                        size="small"
-                        type="number"
-                        value={ing.totalCost}
-                        onChange={(e) => {
-                          const updatedIngredients = [...costData.ingredients];
-                          updatedIngredients[index].totalCost = parseInt(e.target.value) || 0;
-
-                          // Recalculate totals
-                          const newIngredientTotal = updatedIngredients.reduce((sum, item) => sum + item.totalCost, 0);
-                          const newLaborCost = Math.round(newIngredientTotal * 0.2);
-                          const newTotalCost = newIngredientTotal + newLaborCost;
-                          const newCostPerServing = Math.round(newTotalCost / (costData.servings || 4));
-                          const newFoodCostPercentage = Math.round((newIngredientTotal / newTotalCost) * 100);
-
-                          setCostData({
-                            ...costData,
-                            ingredients: updatedIngredients,
-                            totalCost: newTotalCost,
-                            costPerServing: newCostPerServing,
-                            laborCost: newLaborCost,
-                            foodCostPercentage: newFoodCostPercentage
-                          });
-                        }}
-                        sx={{
-                          '& .MuiInputBase-root': {
-                            bgcolor: '#1a1a1a',
-                            color: '#00ffc3',
-                            fontSize: '0.85rem',
-                            fontWeight: 'bold',
-                            height: '32px'
-                          }
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        size="small"
-                        onClick={() => {
-                          // Sync with inventory pricing
-                          const costs = calculateCosts();
-                          if (costs.ingredientCosts[index]) {
-                            const updatedIngredients = [...costData.ingredients];
-                            updatedIngredients[index].totalCost = costs.ingredientCosts[index].totalCost;
-
-                            // Recalculate totals
-                            const newIngredientTotal = updatedIngredients.reduce((sum, item) => sum + item.totalCost, 0);
-                            const newLaborCost = Math.round(newIngredientTotal * 0.2);
-                            const newTotalCost = newIngredientTotal + newLaborCost;
-                            const newCostPerServing = Math.round(newTotalCost / (costData.servings || 4));
-                            const newFoodCostPercentage = Math.round((newIngredientTotal / newTotalCost) * 100);
-
-                            setCostData({
-                              ...costData,
-                              ingredients: updatedIngredients,
-                              totalCost: newTotalCost,
-                              costPerServing: newCostPerServing,
-                              laborCost: newLaborCost,
-                              foodCostPercentage: newFoodCostPercentage
-                            });
-                          }
-                        }}
-                        sx={{
-                          color: '#ffd700',
-                          fontSize: '0.7rem',
-                          minWidth: '60px'
-                        }}
-                      >
-                        📊 Sync
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          {/* PROFIT ANALYSIS */}
-          <Box sx={{ mt: 3, p: 2, bgcolor: '#2a2a2a', borderRadius: 2 }}>
-            <Typography variant="h6" color="#ffd700" mb={2}>
-              💼 Hotel Profit Analysis
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <Typography color="text.secondary">Cost: ¥{costData.costPerServing}</Typography>
-                <Typography color="#00ffc3">Selling Price (300%): ¥{Math.round(costData.costPerServing * 3)}</Typography>
-                <Typography color="#ff6b35">Premium (400%): ¥{Math.round(costData.costPerServing * 4)}</Typography>
-              </Grid>
-              <Grid item xs={6}>
-                <Typography color="text.secondary">Food Cost: {costData.foodCostPercentage || 25}%</Typography>
-                <Typography color="#00ffc3">Labor: 20%</Typography>
-                <Typography color="#ffd700">Profit: 200-300%</Typography>
-              </Grid>
-            </Grid>
-          </Box>
-        </DialogContent>
-
-        <DialogActions sx={{ bgcolor: '#1a1a1a', p: 2 }}>
-          <Button
-            onClick={() => {
-              // Sync all ingredients with inventory
-              const costs = calculateCosts();
-              setCostData({
-                totalCost: costs.totalCost,
-                costPerServing: costs.perServing,
-                laborCost: costs.laborCost,
-                ingredients: costs.ingredientCosts || [],
-                servings: recipe.servings || 4,
-                foodCostPercentage: costs.foodCostPercentage
-              });
-            }}
-            sx={{ color: '#00ffc3' }}
-          >
-            🔄 Sync All Prices
-          </Button>
-          <Button
-            onClick={() => setCostCalculatorOpen(false)}
-            sx={{ color: '#ff6b35' }}
-          >
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </>
-  );
+  // Dairy
+  'butter': { price: 680, unit: 'kg', supplier: 'Premium Dairy Tokyo' },
+  'cream': { price: 450, unit: 'liter', supplier: 'Premium Dairy Tokyo' },
+  'milk': { price: 280, unit: 'liter', supplier: 'Premium Dairy Tokyo' },
+  'cheese': { price: 1200, unit: 'kg', supplier: 'Artisan Cheese Tokyo' },
+  'eggs': { price: 320, unit: 'dozen', supplier: 'Farm Fresh Tokyo' }
 };
 
-export default ProfessionalRecipeCard;
+// Unit conversion factors to standardize to grams
+export const UNIT_CONVERSIONS = {
+  'kg': 1000,
+  'g': 1,
+  'liter': 1000, // assume 1ml = 1g for liquids
+  'ml': 1,
+  'bottle': 750, // standard bottle size in ml
+  'piece': 50, // average piece weight in grams
+  'dozen': 600, // dozen eggs approximately 600g
+  'cup': 240, // 1 cup = 240g
+  'cups': 240,
+  'tbsp': 15, // 1 tablespoon = 15g
+  'tsp': 5 // 1 teaspoon = 5g
+};
+
+export const calculateIngredientCost = (ingredientName, quantity, unit) => {
+  // Normalize ingredient name for lookup
+  const normalizedName = ingredientName.toLowerCase().trim();
+
+  // Find matching ingredient in pricing database
+  let pricingData = TOKYO_INVENTORY_PRICING[normalizedName];
+
+  // If exact match not found, try partial matches
+  if (!pricingData) {
+    const partialMatch = Object.keys(TOKYO_INVENTORY_PRICING).find(key =>
+      normalizedName.includes(key) || key.includes(normalizedName)
+    );
+    if (partialMatch) {
+      pricingData = TOKYO_INVENTORY_PRICING[partialMatch];
+    }
+  }
+
+  // If still no match, return estimated cost
+  if (!pricingData) {
+    console.warn(`No pricing data found for: ${ingredientName}`);
+    return { cost: 50, estimated: true, supplier: 'Estimated' }; // Default ¥50 per 100g
+  }
+
+  // Convert quantities to grams for calculation
+  const ingredientGrams = convertToGrams(quantity, unit);
+  const pricePerGram = pricingData.price / convertToGrams(1, pricingData.unit);
+
+  return {
+    cost: Math.round(pricePerGram * ingredientGrams),
+    estimated: false,
+    supplier: pricingData.supplier,
+    pricePerUnit: pricingData.price,
+    unit: pricingData.unit
+  };
+};
+
+const convertToGrams = (quantity, unit) => {
+  const normalizedUnit = unit.toLowerCase().trim();
+  const conversionFactor = UNIT_CONVERSIONS[normalizedUnit] || 100; // default 100g if unknown
+  return quantity * conversionFactor;
+};
+
+export const calculateRecipeCost = (recipe) => {
+  if (!recipe || !recipe.ingredients) {
+    return { totalCost: 0, ingredientCosts: [], laborCost: 0 };
+  }
+
+  const ingredientCosts = recipe.ingredients.map(ingredient => {
+    // Parse ingredient string to extract quantity and unit
+    const parsed = parseIngredient(ingredient);
+    const costData = calculateIngredientCost(parsed.name, parsed.quantity, parsed.unit);
+
+    return {
+      ingredient: ingredient,
+      name: parsed.name,
+      quantity: parsed.quantity,
+      unit: parsed.unit,
+      cost: costData.cost,
+      estimated: costData.estimated,
+      supplier: costData.supplier
+    };
+  });
+
+  const totalIngredientCost = ingredientCosts.reduce((sum, item) => sum + item.cost, 0);
+
+  // Calculate labor cost (20% of ingredient cost as standard)
+  const laborCost = Math.round(totalIngredientCost * 0.2);
+
+  return {
+    totalCost: totalIngredientCost + laborCost,
+    ingredientCosts,
+    laborCost,
+    ingredientTotal: totalIngredientCost
+  };
+};
+
+const parseIngredient = (ingredientString) => {
+  // Parse strings like "2 cups flour", "500g beef", "1 large onion"
+  const regex = /^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)?\s+(.+)$/;
+  const match = ingredientString.match(regex);
+
+  if (match) {
+    return {
+      quantity: parseFloat(match[1]),
+      unit: match[2] || 'g',
+      name: match[3].trim()
+    };
+  }
+
+  // If no quantity found, assume 100g
+  return {
+    quantity: 100,
+    unit: 'g',
+    name: ingredientString.trim()
+  };
+};
