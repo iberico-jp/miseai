@@ -17,17 +17,19 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TableRow
+  TableRow,
+  Select,
+  MenuItem,
+  FormControl
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { Select, MenuItem, FormControl } from '@mui/material';
 
 const METRIC_UNITS = [
   'piece', 'gram', 'kg', 'litre', 'ml', 'cup', 'tbsp', 'tsp',
   'bunch', 'clove', 'slice', 'fillet', 'portion'
 ];
 
-const CostCalculatorModal = ({ recipe, onClose }) => {
+const CostCalculatorModal = ({ recipe, onClose, onSave }) => {
   const [ingredients, setIngredients] = useState([]);
   const [costData, setCostData] = useState({
     ingredientCost: 0,
@@ -46,7 +48,6 @@ const CostCalculatorModal = ({ recipe, onClose }) => {
   }, [recipe, servings]);
 
   const parseIngredients = (recipe) => {
-    // Handle different ingredient formats
     if (recipe.ingredients && Array.isArray(recipe.ingredients)) {
       return recipe.ingredients.map((ing, index) => ({
         id: index,
@@ -57,7 +58,6 @@ const CostCalculatorModal = ({ recipe, onClose }) => {
       }));
     }
 
-    // Default empty ingredients
     return [
       { id: 1, name: 'Add ingredient', quantity: 1, unit: 'piece', price: 0 }
     ];
@@ -84,28 +84,21 @@ const CostCalculatorModal = ({ recipe, onClose }) => {
     });
   };
 
-  // FIXED: Better handleIngredientUpdate function
   const handleIngredientUpdate = (index, field, value) => {
-    console.log(`Updating ingredient ${index}, field: ${field}, value: ${value}`);
-
     const updatedIngredients = [...ingredients];
 
     if (field === 'price' || field === 'quantity') {
-      // Handle numeric fields properly
       const numericValue = value === '' ? 0 : parseFloat(value);
       updatedIngredients[index] = {
         ...updatedIngredients[index],
         [field]: isNaN(numericValue) ? 0 : numericValue
       };
     } else {
-      // Handle text fields
       updatedIngredients[index] = {
         ...updatedIngredients[index],
         [field]: value
       };
     }
-
-    console.log('Updated ingredient:', updatedIngredients[index]);
 
     setIngredients(updatedIngredients);
     calculateCosts(updatedIngredients, servings);
@@ -122,6 +115,17 @@ const CostCalculatorModal = ({ recipe, onClose }) => {
     setIngredients([...ingredients, newIngredient]);
   };
 
+  const handleSave = () => {
+    if (onSave && typeof onSave === 'function') {
+      onSave({
+        costData: costData,
+        ingredients: ingredients,
+        servings: servings
+      });
+    }
+    onClose();
+  };
+
   return (
     <Dialog
       open={true}
@@ -134,7 +138,6 @@ const CostCalculatorModal = ({ recipe, onClose }) => {
           color: '#ffffff'
         }
       }}
-      // FIXED: Prevent scroll lock issues
       disableScrollLock={true}
       keepMounted={false}
     >
@@ -249,49 +252,28 @@ const CostCalculatorModal = ({ recipe, onClose }) => {
                             '& .MuiInput-underline:after': { borderBottomColor: '#00ff88' }
                           }}
                           MenuProps={{
-                            anchorOrigin: {
-                              vertical: 'bottom',
-                              horizontal: 'left',
-                            },
-                            transformOrigin: {
-                              vertical: 'top',
-                              horizontal: 'left',
-                            },
                             PaperProps: {
                               style: {
                                 backgroundColor: '#2a2a2a',
-                                color: '#ffffff',
-                                maxHeight: '200px'
+                                color: '#ffffff'
                               }
                             },
-                            // FIXED: Prevent screen shift
-                            disableScrollLock: true,
-                            keepMounted: false
+                            disableScrollLock: true
                           }}
                         >
                           {METRIC_UNITS.map((unit) => (
-                            <MenuItem key={unit} value={unit} sx={{ color: '#ffffff', backgroundColor: '#2a2a2a' }}>
+                            <MenuItem key={unit} value={unit} sx={{ color: '#ffffff' }}>
                               {unit}
                             </MenuItem>
                           ))}
                         </Select>
                       </FormControl>
                     </TableCell>
-
-                    {/* ADDED: Missing Price TableCell */}
                     <TableCell>
                       <TextField
                         type="number"
                         value={ingredient.price || 0}
-                        onChange={(e) => {
-                          console.log('Price changing from', ingredient.price, 'to', e.target.value);
-                          handleIngredientUpdate(index, 'price', e.target.value);
-                        }}
-                        onBlur={(e) => {
-                          // Ensure the value is properly set on blur
-                          const newPrice = parseFloat(e.target.value) || 0;
-                          handleIngredientUpdate(index, 'price', newPrice);
-                        }}
+                        onChange={(e) => handleIngredientUpdate(index, 'price', e.target.value)}
                         size="small"
                         variant="standard"
                         inputProps={{
@@ -307,8 +289,6 @@ const CostCalculatorModal = ({ recipe, onClose }) => {
                         }}
                       />
                     </TableCell>
-
-                    {/* ADDED: Missing Total TableCell */}
                     <TableCell sx={{ color: '#00ff88', fontWeight: 'bold' }}>
                       ¥{((ingredient.quantity || 0) * (ingredient.price || 0)).toFixed(2)}
                     </TableCell>
@@ -368,10 +348,7 @@ const CostCalculatorModal = ({ recipe, onClose }) => {
         <Button
           variant="contained"
           sx={{ backgroundColor: '#00ff88', color: '#000000' }}
-          onClick={() => {
-            console.log('Saving cost data:', costData);
-            onClose();
-          }}
+          onClick={handleSave}
         >
           Save Changes
         </Button>

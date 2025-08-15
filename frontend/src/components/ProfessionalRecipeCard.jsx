@@ -26,20 +26,26 @@ const ProfessionalRecipeCard = ({ recipe, onClose }) => {
   const recipePhoto = recipe?.photo || null;
 
   // Parse ingredients safely
-  const parseIngredients = () => {
-    if (recipe?.ingredients && Array.isArray(recipe.ingredients)) {
-      return recipe.ingredients.map((ing, index) => {
-        if (typeof ing === 'string') {
-          return ing;
+  // In ProfessionalRecipeCard.jsx, replace the parseIngredients function:
+const parseIngredients = () => {
+  if (recipe?.ingredients && Array.isArray(recipe.ingredients)) {
+    return recipe.ingredients.map((ing, index) => {
+      if (typeof ing === 'string') {
+        return ing;
+      }
+      if (typeof ing === 'object') {
+        // Handle both old and new ingredient formats
+        if (ing.name) {
+          return `${ing.quantity || ''} ${ing.unit || ''} ${ing.name}`.trim();
         }
-        if (typeof ing === 'object') {
-          return `${ing.quantity || ''} ${ing.unit || ''} ${ing.name || ''}`.trim();
-        }
-        return `Ingredient ${index + 1}`;
-      });
-    }
-    return [];
-  };
+        return ing.toString();
+      }
+      return `Ingredient ${index + 1}`;
+    });
+  }
+  return [];
+};
+
 
   const ingredients = parseIngredients();
 

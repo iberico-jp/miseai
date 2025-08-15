@@ -90,6 +90,29 @@ const ChefVaultPage = () => {
     console.log('Cost calculator should open now');
   };
 
+  // Add this function in ChefVaultPage.jsx
+const handleSaveCostData = (updatedCostData) => {
+  console.log('Saving cost data for recipe:', costCalculatorRecipe?.prompt);
+  console.log('Updated data:', updatedCostData);
+
+  // Update the recipe in the recipes array
+  setRecipes(prevRecipes =>
+    prevRecipes.map(recipe =>
+      recipe.date === costCalculatorRecipe.date
+        ? {
+            ...recipe,
+            costData: updatedCostData.costData,
+            ingredients: updatedCostData.ingredients,
+            servings: updatedCostData.servings
+          }
+        : recipe
+    )
+  );
+
+  console.log('Cost data saved!');
+};
+
+
   const handleDeleteRecipe = (recipe) => {
     setRecipeToDelete(recipe);
     setDeleteDialogOpen(true);
@@ -454,16 +477,18 @@ const ChefVaultPage = () => {
         />
       )}
 
-      {/* COST CALCULATOR MODAL */}
-      {isCostCalculatorOpen && costCalculatorRecipe && (
-        <CostCalculatorModal
-          recipe={costCalculatorRecipe}
-          onClose={() => {
-            setIsCostCalculatorOpen(false);
-            setCostCalculatorRecipe(null);
-          }}
-        />
-      )}
+      {/* UPDATE this section in ChefVaultPage.jsx */}
+{isCostCalculatorOpen && costCalculatorRecipe && (
+  <CostCalculatorModal
+    recipe={costCalculatorRecipe}
+    onClose={() => {
+      setIsCostCalculatorOpen(false);
+      setCostCalculatorRecipe(null);
+    }}
+    onSave={handleSaveCostData}
+  />
+)}
+
 
       {/* CONTEXT MENU */}
       <Menu
