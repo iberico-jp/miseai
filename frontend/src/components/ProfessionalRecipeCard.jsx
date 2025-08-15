@@ -1,477 +1,299 @@
-import React, { useState, useEffect } from 'react';
-import { calculateRecipeCost } from '../services/pricingService';
+import React from 'react';
 import {
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  Button, Box, Typography, Grid, Chip, TextField, Paper, Tooltip,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow
+  Dialog,
+  DialogContent,
+  Button,
+  Typography,
+  Box,
+  Grid,
+  Divider,
+  IconButton,
+  Paper,
+  Chip
 } from '@mui/material';
 import {
+  Close as CloseIcon,
   Print as PrintIcon,
   Share as ShareIcon,
-  Download as DownloadIcon,
-  Edit as EditIcon,
-  Save as SaveIcon,
-  Calculate as CostIcon,
-  Close as CloseIcon,
-  AttachMoney as MoneyIcon
+  GetApp as DownloadIcon
 } from '@mui/icons-material';
 
-const ProfessionalRecipeCard = ({
-  open,
-  recipe,
-  onClose,
-  onSave,
-  onDelete
-}) => {
-  const [editMode, setEditMode] = useState(false);
-  const [editedRecipe, setEditedRecipe] = useState(recipe?.aiResult || '');
-  const [chefNotes, setChefNotes] = useState('');
-  const [costCalculatorOpen, setCostCalculatorOpen] = useState(false);
+const ProfessionalRecipeCard = ({ recipe, onClose }) => {
+  const recipeName = recipe?.prompt || 'Untitled Recipe';
+  const recipeContent = recipe?.aiResult || recipe?.description || 'No content available';
+  const recipeDate = recipe?.date ? new Date(recipe.date).toLocaleDateString() : 'N/A';
+  const recipeServings = recipe?.servings || 4;
+  const recipePhoto = recipe?.photo || null;
 
-  const [costData, setCostData] = useState({
-    totalCost: 0,
-    costPerServing: 0,
-    laborCost: 0,
-    ingredients: []
-  });
-
-  if (!recipe) return null;
-
-  // NEW: Updated cost calculation using the pricing service
-  const calculateCosts = () => {
-  if (!recipe || !recipe.ingredients) {
-    return {
-      totalCost: 0,
-      perServing: 0,
-      laborCost: 0,
-      ingredientCosts: [],
-      foodCostPercentage: 0
-    };
-  }
-
-  const costData = calculateRecipeCost(recipe);
-
-  return {
-    totalCost: costData.totalCost,
-    perServing: Math.round(costData.totalCost / (recipe.servings || 4)),
-    laborCost: costData.laborCost,
-    ingredientCosts: costData.ingredientCosts,
-    foodCostPercentage: Math.round((costData.ingredientTotal / costData.totalCost) * 100) || 0
-  };
-};
-
-  // Updated handler to use the new calculation
-  const handleCostCalculation = () => {
-    const costs = calculateCosts();
-
-    setCostData({
-      totalCost: costs.totalCost,
-      costPerServing: costs.perServing,
-      laborCost: costs.laborCost,
-      ingredients: costs.ingredientCosts || [],
-      servings: recipe.servings || 4,
-      foodCostPercentage: costs.foodCostPercentage
-    });
-
-    setCostCalculatorOpen(true);
+  // Parse ingredients safely
+  const parseIngredients = () => {
+    if (recipe?.ingredients && Array.isArray(recipe.ingredients)) {
+      return recipe.ingredients.map((ing, index) => {
+        if (typeof ing === 'string') {
+          return ing;
+        }
+        if (typeof ing === 'object') {
+          return `${ing.quantity || ''} ${ing.unit || ''} ${ing.name || ''}`.trim();
+        }
+        return `Ingredient ${index + 1}`;
+      });
+    }
+    return [];
   };
 
-  // Export functions
+  const ingredients = parseIngredients();
+
+  // Print functionality
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
+      <!DOCTYPE html>
       <html>
-        <head>
-          <title>${recipe.prompt} - MiseAI Professional Recipe</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
-            .header { border-bottom: 3px solid #ff6b35; padding-bottom: 15px; margin-bottom: 25px; }
-            .content { white-space: pre-line; background: #f9f9f9; padding: 20px; border-radius: 8px; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>🍽️ ${recipe.prompt}</h1>
-            <p>Generated: ${new Date(recipe.date).toLocaleString()}</p>
-            <p>🔥 HACCP Validated Recipe</p>
+      <head>
+        <title>${recipeName} - Recipe</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+          .header { text-align: center; border-bottom: 2px solid #00ffc3; padding-bottom: 20px; margin-bottom: 30px; }
+          .recipe-title { color: #00ffc3; font-size: 28px; font-weight: bold; margin: 0; }
+          .recipe-meta { color: #666; margin-top: 10px; }
+          .section { margin: 30px 0; }
+          .section-title { color: #00ffc3; font-size: 20px; font-weight: bold; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+          .ingredients-list { columns: 2; column-gap: 30px; margin-top: 15px; }
+          .ingredient { margin: 5px 0; break-inside: avoid; }
+          .method { line-height: 1.6; margin-top: 15px; white-space: pre-line; }
+          .recipe-image { max-width: 300px; margin: 20px auto; display: block; border-radius: 8px; }
+          @media print { body { margin: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1 class="recipe-title">${recipeName}</h1>
+          <div class="recipe-meta">Servings: ${recipeServings} | Created: ${recipeDate}</div>
+        </div>
+
+        ${recipePhoto ? `<img src="${recipePhoto}" alt="${recipeName}" class="recipe-image" />` : ''}
+
+        ${ingredients.length > 0 ? `
+          <div class="section">
+            <h2 class="section-title">Ingredients (${ingredients.length})</h2>
+            <div class="ingredients-list">
+              ${ingredients.map(ing => `<div class="ingredient">• ${ing}</div>`).join('')}
+            </div>
           </div>
-          <div class="content">${recipe.aiResult}</div>
-        </body>
+        ` : ''}
+
+        <div class="section">
+          <h2 class="section-title">Method & Instructions</h2>
+          <div class="method">${recipeContent}</div>
+        </div>
+
+        <div style="text-align: center; margin-top: 50px; color: #666; font-size: 12px;">
+          Generated by MiseAI Chef's Vault - ${new Date().toLocaleDateString()}
+        </div>
+      </body>
       </html>
     `);
     printWindow.document.close();
     printWindow.print();
   };
 
+  // Share functionality
   const handleShare = async () => {
-    const shareText = `🍽️ ${recipe.prompt}\n\n${recipe.aiResult}\n\nGenerated by MiseAI`;
+    const shareData = {
+      title: recipeName,
+      text: `Check out this recipe: ${recipeName}\n\nIngredients: ${ingredients.join(', ')}\n\nMethod: ${recipeContent.substring(0, 200)}...`,
+      url: window.location.href
+    };
 
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: `Recipe: ${recipe.prompt}`,
-          text: shareText
-        });
+        await navigator.share(shareData);
       } catch (err) {
-        navigator.clipboard.writeText(shareText);
-        alert('Recipe copied to clipboard!');
+        console.log('Share cancelled');
       }
     } else {
-      navigator.clipboard.writeText(shareText);
+      // Fallback - copy to clipboard
+      navigator.clipboard.writeText(`${shareData.title}\n\n${shareData.text}`);
       alert('Recipe copied to clipboard!');
     }
   };
 
-  const handleSaveEdits = () => {
-    onSave({ ...recipe, aiResult: editedRecipe });
-    setEditMode(false);
-  };
-
   return (
-    <>
-      {/* MAIN RECIPE CARD */}
-      <Dialog
-        open={open}
-        onClose={onClose}
-        maxWidth="xl"
-        fullWidth
-        PaperProps={{
-          sx: {
-            maxHeight: '95vh',
-            bgcolor: '#1a1a1a',
-            minWidth: '1000px'
-          }
-        }}
-      >
-        {/* HEADER */}
-        <DialogTitle sx={{
-          bgcolor: '#ff6b35',
-          color: '#fff',
-          p: 3,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <Box>
-            <Typography variant="h5" fontWeight="bold">
-              👨‍🍳 {recipe.prompt}
-            </Typography>
-            <Typography variant="subtitle2" sx={{ opacity: 0.9, mt: 1 }}>
-              Generated: {new Date(recipe.date).toLocaleString()} |
-              🔥 HACCP Validated
-            </Typography>
-          </Box>
-          <Button onClick={onClose} sx={{ color: '#fff', minWidth: 'auto' }}>
-            <CloseIcon />
-          </Button>
-        </DialogTitle>
-
-        {/* TOOLBAR */}
+    <Dialog
+      open={true}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        style: {
+          backgroundColor: '#1a1a1a',
+          color: '#ffffff',
+          maxHeight: '90vh',
+          margin: '20px'
+        }
+      }}
+      // FIXED: Prevent scroll issues
+      disableScrollLock={true}
+      keepMounted={false}
+    >
+      <DialogContent sx={{ backgroundColor: '#1a1a1a', color: '#ffffff', p: 0 }}>
+        {/* Header with controls */}
         <Box sx={{
-          bgcolor: '#2a2a2a',
-          p: 2,
           display: 'flex',
-          gap: 1,
-          flexWrap: 'wrap'
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          p: 3,
+          borderBottom: '1px solid #333'
         }}>
-          <Button
-            startIcon={<PrintIcon />}
-            onClick={handlePrint}
-            variant="outlined"
-            size="small"
-            sx={{ borderColor: '#00ffc3', color: '#00ffc3' }}
-          >
-            Print
-          </Button>
-
-          <Button
-            startIcon={<ShareIcon />}
-            onClick={handleShare}
-            variant="outlined"
-            size="small"
-            sx={{ borderColor: '#00ffc3', color: '#00ffc3' }}
-          >
-            Share
-          </Button>
-
-          <Button
-            startIcon={<EditIcon />}
-            onClick={() => {
-              setEditMode(!editMode);
-              setEditedRecipe(recipe.aiResult);
-            }}
-            variant={editMode ? "contained" : "outlined"}
-            size="small"
-            sx={{
-              borderColor: '#ff6b35',
-              color: editMode ? '#fff' : '#ff6b35',
-              bgcolor: editMode ? '#ff6b35' : 'transparent'
-            }}
-          >
-            {editMode ? 'Cancel' : 'Edit'}
-          </Button>
-
-          {editMode && (
-            <Button
-              startIcon={<SaveIcon />}
-              onClick={handleSaveEdits}
-              variant="contained"
-              size="small"
-              sx={{ bgcolor: '#00ffc3', color: '#000' }}
-            >
-              Save
-            </Button>
-          )}
-
-          <Button
-            startIcon={<CostIcon />}
-            onClick={handleCostCalculation}
-            variant="contained"
-            size="small"
-            sx={{
-              bgcolor: '#ffd700',
-              color: '#000',
-              '&:hover': { bgcolor: '#ffed4e' }
-            }}
-          >
-            💰 Cost Analysis
-          </Button>
+          <Typography variant="h4" sx={{ color: '#00ffc3', fontWeight: 'bold' }}>
+            {recipeName}
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <IconButton onClick={handlePrint} sx={{ color: '#00ffc3' }} title="Print Recipe">
+              <PrintIcon />
+            </IconButton>
+            <IconButton onClick={handleShare} sx={{ color: '#00ffc3' }} title="Share Recipe">
+              <ShareIcon />
+            </IconButton>
+            <IconButton onClick={onClose} sx={{ color: '#ffffff' }}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
         </Box>
 
-        {/* CONTENT */}
-        <DialogContent sx={{
-          maxHeight: '60vh',
-          overflowY: 'auto',
-          bgcolor: '#232323',
-          p: 3
-        }}>
-          {/* INFO CARDS */}
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid item xs={12} md={4}>
-              <Paper sx={{ p: 2, bgcolor: '#2a2a2a', textAlign: 'center' }}>
-                <Typography variant="h6" color="#00ffc3">Servings</Typography>
-                <Typography>{recipe.aiResult.match(/servings?:\s*(\d+)/i)?.[1] || '4'}</Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Paper sx={{ p: 2, bgcolor: '#2a2a2a', textAlign: 'center' }}>
-                <MoneyIcon sx={{ color: '#ffd700', fontSize: 30 }} />
-                <Typography variant="h6" color="#ffd700">Cost/Serving</Typography>
-                <Typography>¥{costData.costPerServing || '---'}</Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Paper sx={{ p: 2, bgcolor: '#2a2a2a', textAlign: 'center' }}>
-                <Chip
-                  label="🔥 HACCP SAFE"
-                  sx={{ bgcolor: '#00ff00', color: '#000', fontWeight: 'bold' }}
-                />
-              </Paper>
-            </Grid>
-          </Grid>
-
-          {/* RECIPE CONTENT */}
-          {editMode ? (
-            <TextField
-              fullWidth
-              multiline
-              rows={20}
-              value={editedRecipe}
-              onChange={(e) => setEditedRecipe(e.target.value)}
-              sx={{
-                '& .MuiInputBase-root': {
-                  bgcolor: '#1a1a1a',
-                  fontFamily: 'monospace',
-                  fontSize: '0.95rem'
-                }
-              }}
-            />
-          ) : (
-            <Paper sx={{
-              p: 3,
-              bgcolor: '#1a1a1a',
-              border: '2px solid #ff6b35',
-              minHeight: '400px'
-            }}>
-              <Typography sx={{
-                whiteSpace: "pre-line",
-                lineHeight: 1.8,
-                fontSize: '1rem',
-                fontFamily: 'monospace',
-                color: '#e0e0e0'
-              }}>
-                {recipe.aiResult}
-              </Typography>
-            </Paper>
-          )}
-
-          {/* CHEF NOTES */}
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="h6" sx={{ color: '#00ffc3', mb: 2 }}>
-              👨‍🍳 Chef's Notes
-            </Typography>
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              value={chefNotes}
-              onChange={(e) => setChefNotes(e.target.value)}
-              placeholder="Add professional notes, modifications, or cost observations..."
-              sx={{
-                '& .MuiInputBase-root': {
-                  bgcolor: '#2a2a2a',
-                  fontSize: '0.9rem'
-                }
-              }}
-            />
-          </Box>
-        </DialogContent>
-
-        {/* ACTIONS */}
-        <DialogActions sx={{
-          bgcolor: '#1a1a1a',
-          p: 3,
-          justifyContent: 'space-between'
-        }}>
-          <Button
-            variant="contained"
-            startIcon={<CostIcon />}
-            onClick={handleCostCalculation}
-            sx={{ bgcolor: '#ffd700', color: '#000' }}
-          >
-            💰 Calculate Cost
-          </Button>
-
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button
-              variant="outlined"
-              onClick={onClose}
-              sx={{ borderColor: '#666', color: '#666' }}
-            >
-              Close
-            </Button>
-
-            <Button
-              variant="contained"
-              color="error"
-              onClick={() => {
-                if (confirm('Delete this recipe?')) {
-                  onDelete();
-                  onClose();
-                }
-              }}
-            >
-              Delete
-            </Button>
-          </Box>
-        </DialogActions>
-      </Dialog>
-
-      {/* COST CALCULATOR MODAL */}
-      <Dialog
-        open={costCalculatorOpen}
-        onClose={() => setCostCalculatorOpen(false)}
-        maxWidth="md"
-        fullWidth
-        disableEnforceFocus={true}
-        disableAutoFocus={true}
-        PaperProps={{ sx: { bgcolor: '#1a1a1a' } }}
-      >
-        <DialogTitle sx={{ bgcolor: '#ffd700', color: '#000', fontWeight: 'bold' }}>
-          💰 Cost Analysis - {recipe.prompt}
-        </DialogTitle>
-        <DialogContent sx={{ bgcolor: '#232323' }}>
-
-          {/* COST SUMMARY */}
-          <Grid container spacing={2} sx={{ mb: 3, mt: 1 }}>
-            <Grid item xs={12} md={4}>
-              <Paper sx={{ p: 2, bgcolor: '#2a2a2a', textAlign: 'center' }}>
-                <Typography variant="h4" color="#ffd700">¥{costData.totalCost}</Typography>
-                <Typography color="text.secondary">Total Cost</Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Paper sx={{ p: 2, bgcolor: '#2a2a2a', textAlign: 'center' }}>
-                <Typography variant="h4" color="#00ffc3">¥{costData.costPerServing}</Typography>
-                <Typography color="text.secondary">Per Serving</Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Paper sx={{ p: 2, bgcolor: '#2a2a2a', textAlign: 'center' }}>
-                <Typography variant="h4" color="#ff6b35">¥{costData.laborCost}</Typography>
-                <Typography color="text.secondary">Labor (20%)</Typography>
-              </Paper>
-            </Grid>
-          </Grid>
-
-          {/* NEW: Food Cost Percentage */}
-          {costData.foodCostPercentage && (
-            <Box sx={{ mb: 3, p: 2, bgcolor: '#2a2a2a', borderRadius: 2 }}>
-              <Typography variant="h6" color="#00ffc3" mb={1}>
-                📊 Food Cost Percentage: {costData.foodCostPercentage}%
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Industry Standard: 28-35% | Your Recipe: {costData.foodCostPercentage}%
-              </Typography>
+        {/* Recipe content */}
+        <Box sx={{ p: 3 }}>
+          {/* Recipe Photo */}
+          {recipePhoto && (
+            <Box sx={{ mb: 3, textAlign: 'center' }}>
+              <img
+                src={recipePhoto}
+                alt={recipeName}
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '300px',
+                  borderRadius: '8px',
+                  objectFit: 'cover'
+                }}
+              />
             </Box>
           )}
 
-          {/* INGREDIENT BREAKDOWN */}
-          <Typography variant="h6" sx={{ color: '#00ffc3', mb: 2 }}>
-            📊 Ingredient Breakdown (Tokyo Prices)
-          </Typography>
-
-          <TableContainer component={Paper} sx={{ bgcolor: '#2a2a2a' }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ bgcolor: '#ff6b35' }}>
-                  <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Ingredient</TableCell>
-                  <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Amount</TableCell>
-                  <TableCell sx={{ color: '#fff', fontWeight: 'bold' }}>Cost</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {costData.ingredients.map((ing, index) => (
-                  <TableRow key={index}>
-                    <TableCell sx={{ color: '#e0e0e0' }}>{ing.name}</TableCell>
-                    <TableCell sx={{ color: '#e0e0e0' }}>{ing.amount}</TableCell>
-                    <TableCell sx={{ color: '#00ffc3', fontWeight: 'bold' }}>¥{ing.totalCost}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          {/* PROFIT ANALYSIS */}
-          <Box sx={{ mt: 3, p: 2, bgcolor: '#2a2a2a', borderRadius: 2 }}>
-            <Typography variant="h6" color="#ffd700" mb={2}>
-              💼 Hotel Profit Analysis
-            </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
-                <Typography color="text.secondary">Cost: ¥{costData.costPerServing}</Typography>
-                <Typography color="#00ffc3">Selling Price (300%): ¥{costData.costPerServing * 3}</Typography>
-                <Typography color="#ff6b35">Premium (400%): ¥{costData.costPerServing * 4}</Typography>
-              </Grid>
-              <Grid item xs={6}>
-                <Typography color="text.secondary">Food Cost: {costData.foodCostPercentage || 25}%</Typography>
-                <Typography color="#00ffc3">Labor: 20%</Typography>
-                <Typography color="#ffd700">Profit: 200-300%</Typography>
-              </Grid>
+          {/* Recipe Stats */}
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid item xs={4}>
+              <Paper sx={{ backgroundColor: '#2a2a2a', p: 2, textAlign: 'center' }}>
+                <Typography variant="h6" sx={{ color: '#00ffc3' }}>
+                  {recipeServings}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#ffffff' }}>
+                  Servings
+                </Typography>
+              </Paper>
             </Grid>
-          </Box>
-        </DialogContent>
+            <Grid item xs={4}>
+              <Paper sx={{ backgroundColor: '#2a2a2a', p: 2, textAlign: 'center' }}>
+                <Typography variant="h6" sx={{ color: '#00ffc3' }}>
+                  {ingredients.length}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#ffffff' }}>
+                  Ingredients
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={4}>
+              <Paper sx={{ backgroundColor: '#2a2a2a', p: 2, textAlign: 'center' }}>
+                <Typography variant="h6" sx={{ color: '#00ffc3' }}>
+                  {recipeDate}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#ffffff' }}>
+                  Created
+                </Typography>
+              </Paper>
+            </Grid>
+          </Grid>
 
-        <DialogActions sx={{ bgcolor: '#1a1a1a', p: 2 }}>
-          <Button
-            onClick={() => setCostCalculatorOpen(false)}
-            sx={{ color: '#ff6b35' }}
-          >
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </>
+          <Divider sx={{ backgroundColor: '#333333', mb: 3 }} />
+
+          {/* Ingredients */}
+          {ingredients.length > 0 && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h5" sx={{ color: '#00ffc3', mb: 2 }}>
+                Ingredients ({ingredients.length})
+              </Typography>
+              <Grid container spacing={1}>
+                {ingredients.map((ingredient, index) => (
+                  <Grid item xs={12} sm={6} key={index}>
+                    <Chip
+                      label={ingredient}
+                      variant="outlined"
+                      sx={{
+                        color: '#ffffff',
+                        borderColor: '#00ffc3',
+                        backgroundColor: '#2a2a2a',
+                        mb: 0.5,
+                        width: '100%',
+                        justifyContent: 'flex-start',
+                        height: 'auto',
+                        '& .MuiChip-label': {
+                          whiteSpace: 'normal',
+                          textAlign: 'left'
+                        }
+                      }}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          )}
+
+          <Divider sx={{ backgroundColor: '#333333', mb: 3 }} />
+
+          {/* Method & Instructions */}
+          <Box>
+            <Typography variant="h5" sx={{ color: '#00ffc3', mb: 2 }}>
+              Method & Instructions
+            </Typography>
+            <Paper sx={{ backgroundColor: '#2a2a2a', p: 3 }}>
+              <Typography
+                variant="body1"
+                sx={{
+                  color: '#ffffff',
+                  lineHeight: 1.8,
+                  whiteSpace: 'pre-line'
+                }}
+              >
+                {recipeContent}
+              </Typography>
+            </Paper>
+          </Box>
+
+          {/* Action buttons */}
+          <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', mt: 4 }}>
+            <Button
+              variant="contained"
+              startIcon={<PrintIcon />}
+              onClick={handlePrint}
+              sx={{ backgroundColor: '#00ffc3', color: '#000000' }}
+            >
+              Print Recipe
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<ShareIcon />}
+              onClick={handleShare}
+              sx={{
+                color: '#00ffc3',
+                borderColor: '#00ffc3',
+                '&:hover': { backgroundColor: 'rgba(0, 255, 195, 0.1)' }
+              }}
+            >
+              Share Recipe
+            </Button>
+          </Box>
+        </Box>
+      </DialogContent>
+    </Dialog>
   );
 };
 

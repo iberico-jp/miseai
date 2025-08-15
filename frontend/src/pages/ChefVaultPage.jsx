@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Typography, Box, Paper, Button, Grid, TextField,
-  Card, CardContent, CardActions, Fab, Divider,
+  Card, CardContent, Fab, Divider,
   IconButton, Menu, MenuItem, Dialog, DialogTitle,
   DialogContent, DialogActions, Alert
 } from '@mui/material';
@@ -14,11 +14,12 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   MoreVert as MoreIcon,
-  Calculate as CalculateIcon
+  Calculate as CalculateIcon,
+  Close as CloseIcon
 } from '@mui/icons-material';
 import ProfessionalRecipeCard from '../components/ProfessionalRecipeCard';
-// ❌ Comment out this import temporarily
-// import RecipeCreationForm from '../components/RecipeCreationForm';
+import RecipeCreationForm from '../components/RecipeCreationForm';
+import CostCalculatorModal from '../components/CostCalculatorModal';
 
 const ChefVaultPage = () => {
   const [recipes, setRecipes] = useState(() => {
@@ -35,6 +36,12 @@ const ChefVaultPage = () => {
   const [recipeToDelete, setRecipeToDelete] = useState(null);
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [menuRecipe, setMenuRecipe] = useState(null);
+  const [costCalculatorRecipe, setCostCalculatorRecipe] = useState(null);
+  const [isCostCalculatorOpen, setIsCostCalculatorOpen] = useState(false);
+
+  // ADD THESE MISSING STATES FOR VIEW RECIPE
+  const [isViewingRecipe, setIsViewingRecipe] = useState(false);
+  const [viewingRecipe, setViewingRecipe] = useState(null);
 
   useEffect(() => {
     localStorage.setItem("recipes", JSON.stringify(recipes));
@@ -51,16 +58,36 @@ const ChefVaultPage = () => {
       recipeDescription.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  // CRUD Operations
+  // SINGLE VIEW RECIPE HANDLER
+  const handleViewRecipe = (recipe) => {
+    console.log('=== DEBUG: View Recipe Button Clicked ===');
+    console.log('Recipe data:', recipe);
+
+    setViewingRecipe(recipe);
+    setIsViewingRecipe(true);
+
+    console.log('Recipe modal should open now');
+  };
+
   const handleCreateRecipe = () => {
-    // Temporary alert instead of opening form
-    alert('Recipe creation form coming soon!\n\nFor now, use the existing recipe generation features.');
+    setCreationFormOpen(true);
   };
 
   const handleEditRecipe = (recipe) => {
-    // Temporary alert instead of opening form
-    alert('Recipe editing form coming soon!\n\nFor now, you can view the recipe details.');
-    setSelectedRecipe(recipe);
+    setEditingRecipe(recipe);
+    setCreationFormOpen(true);
+  };
+
+  // Cost calculator handler
+  const handleDirectCostAnalysis = (recipe) => {
+    console.log('=== DEBUG: Cost Calculator Button Clicked ===');
+    console.log('Recipe data:', recipe);
+    console.log('Current modal state:', isCostCalculatorOpen);
+
+    setCostCalculatorRecipe(recipe);
+    setIsCostCalculatorOpen(true);
+
+    console.log('Cost calculator should open now');
   };
 
   const handleDeleteRecipe = (recipe) => {
@@ -280,7 +307,10 @@ const ChefVaultPage = () => {
                         </Typography>
                         <IconButton
                           size="small"
-                          onClick={(e) => handleMenuOpen(e, recipe)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMenuOpen(e, recipe);
+                          }}
                           sx={{ color: '#666' }}
                         >
                           <MoreIcon />
@@ -327,23 +357,37 @@ const ChefVaultPage = () => {
                       </Typography>
                     </CardContent>
 
-                    <CardActions sx={{ px: 2, pb: 2, justifyContent: 'space-between' }}>
+                    {/* SINGLE BUTTON ROW - FIXED */}
+                    <Box sx={{ px: 2, pb: 2, display: 'flex', justifyContent: 'space-between', gap: 1 }}>
                       <Button
                         size="small"
-                        onClick={() => setSelectedRecipe(recipe)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewRecipe(recipe);
+                        }}
                         sx={{ color: '#00ffc3', fontWeight: 'bold' }}
                       >
                         View Recipe
                       </Button>
                       <Button
+                        variant="outlined"
                         size="small"
-                        startIcon={<CalculateIcon />}
-                        sx={{ color: '#ff6b35' }}
-                        onClick={() => handleEditRecipe(recipe)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDirectCostAnalysis(recipe);
+                        }}
+                        sx={{
+                          color: '#ffd700',
+                          borderColor: '#ffd700',
+                          '&:hover': {
+                            borderColor: '#ffd700',
+                            backgroundColor: 'rgba(255, 215, 0, 0.1)'
+                          }
+                        }}
                       >
                         Edit & Cost
                       </Button>
-                    </CardActions>
+                    </Box>
                   </Card>
                 </Grid>
               ))}
@@ -378,22 +422,48 @@ const ChefVaultPage = () => {
         </Paper>
       )}
 
-      {/* PROFESSIONAL RECIPE CARD MODAL */}
-      <ProfessionalRecipeCard
-        open={!!selectedRecipe}
-        recipe={selectedRecipe}
-        onClose={() => setSelectedRecipe(null)}
-        onSave={(updatedRecipe) => {
-          setRecipes(prev => prev.map(r =>
-            r.date === updatedRecipe.date ? updatedRecipe : r
-          ));
-          setSelectedRecipe(null);
+      {/* RECIPE CREATION FORM */}
+      <RecipeCreationForm
+        open={creationFormOpen}
+        onClose={() => {
+          setCreationFormOpen(false);
+          setEditingRecipe(null);
         }}
-        onDelete={() => {
-          setRecipes(prev => prev.filter(r => r.date !== selectedRecipe.date));
-          setSelectedRecipe(null);
+        onSave={(recipeData) => {
+          if (editingRecipe) {
+            setRecipes(prev => prev.map(r =>
+              r.date === editingRecipe.date ? { ...recipeData, date: editingRecipe.date } : r
+            ));
+          } else {
+            setRecipes(prev => [...prev, recipeData]);
+          }
+          setCreationFormOpen(false);
+          setEditingRecipe(null);
         }}
+        editingRecipe={editingRecipe}
       />
+
+      {/* VIEW RECIPE MODAL */}
+      {isViewingRecipe && viewingRecipe && (
+        <ProfessionalRecipeCard
+          recipe={viewingRecipe}
+          onClose={() => {
+            setIsViewingRecipe(false);
+            setViewingRecipe(null);
+          }}
+        />
+      )}
+
+      {/* COST CALCULATOR MODAL */}
+      {isCostCalculatorOpen && costCalculatorRecipe && (
+        <CostCalculatorModal
+          recipe={costCalculatorRecipe}
+          onClose={() => {
+            setIsCostCalculatorOpen(false);
+            setCostCalculatorRecipe(null);
+          }}
+        />
+      )}
 
       {/* CONTEXT MENU */}
       <Menu
@@ -401,13 +471,28 @@ const ChefVaultPage = () => {
         open={Boolean(menuAnchor)}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={() => handleEditRecipe(menuRecipe)}>
+        <MenuItem onClick={() => {
+          handleEditRecipe(menuRecipe);
+          handleMenuClose();
+        }}>
           <EditIcon sx={{ mr: 1 }} /> Edit Recipe
         </MenuItem>
-        <MenuItem onClick={() => setSelectedRecipe(menuRecipe)}>
+        <MenuItem onClick={() => {
+          handleViewRecipe(menuRecipe);
+          handleMenuClose();
+        }}>
           <RecipeIcon sx={{ mr: 1 }} /> View Details
         </MenuItem>
-        <MenuItem onClick={() => handleDeleteRecipe(menuRecipe)} sx={{ color: '#ff4444' }}>
+        <MenuItem onClick={() => {
+          handleDirectCostAnalysis(menuRecipe);
+          handleMenuClose();
+        }}>
+          <CalculateIcon sx={{ mr: 1 }} /> Cost Analysis
+        </MenuItem>
+        <MenuItem onClick={() => {
+          handleDeleteRecipe(menuRecipe);
+          handleMenuClose();
+        }} sx={{ color: '#ff4444' }}>
           <DeleteIcon sx={{ mr: 1 }} /> Delete Recipe
         </MenuItem>
       </Menu>
