@@ -39,7 +39,6 @@ const ChefVaultPage = () => {
   const [costCalculatorRecipe, setCostCalculatorRecipe] = useState(null);
   const [isCostCalculatorOpen, setIsCostCalculatorOpen] = useState(false);
 
-  // ADD THESE MISSING STATES FOR VIEW RECIPE
   const [isViewingRecipe, setIsViewingRecipe] = useState(false);
   const [viewingRecipe, setViewingRecipe] = useState(null);
 
@@ -47,7 +46,6 @@ const ChefVaultPage = () => {
     localStorage.setItem("recipes", JSON.stringify(recipes));
   }, [recipes]);
 
-  // Safe search filter that handles both old and new recipe formats
   const filteredRecipes = recipes.filter(recipe => {
     const recipeName = recipe.prompt || recipe.name || '';
     const recipeContent = recipe.aiResult || '';
@@ -58,14 +56,11 @@ const ChefVaultPage = () => {
       recipeDescription.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
-  // SINGLE VIEW RECIPE HANDLER
   const handleViewRecipe = (recipe) => {
     console.log('=== DEBUG: View Recipe Button Clicked ===');
     console.log('Recipe data:', recipe);
-
     setViewingRecipe(recipe);
     setIsViewingRecipe(true);
-
     console.log('Recipe modal should open now');
   };
 
@@ -78,40 +73,32 @@ const ChefVaultPage = () => {
     setCreationFormOpen(true);
   };
 
-  // Cost calculator handler
   const handleDirectCostAnalysis = (recipe) => {
     console.log('=== DEBUG: Cost Calculator Button Clicked ===');
     console.log('Recipe data:', recipe);
     console.log('Current modal state:', isCostCalculatorOpen);
-
     setCostCalculatorRecipe(recipe);
     setIsCostCalculatorOpen(true);
-
     console.log('Cost calculator should open now');
   };
 
-  // Add this function in ChefVaultPage.jsx
-const handleSaveCostData = (updatedCostData) => {
-  console.log('Saving cost data for recipe:', costCalculatorRecipe?.prompt);
-  console.log('Updated data:', updatedCostData);
-
-  // Update the recipe in the recipes array
-  setRecipes(prevRecipes =>
-    prevRecipes.map(recipe =>
-      recipe.date === costCalculatorRecipe.date
-        ? {
-            ...recipe,
-            costData: updatedCostData.costData,
-            ingredients: updatedCostData.ingredients,
-            servings: updatedCostData.servings
-          }
-        : recipe
-    )
-  );
-
-  console.log('Cost data saved!');
-};
-
+  const handleSaveCostData = (updatedCostData) => {
+    console.log('Saving cost data for recipe:', costCalculatorRecipe?.prompt);
+    console.log('Updated data:', updatedCostData);
+    setRecipes(prevRecipes =>
+      prevRecipes.map(recipe =>
+        recipe.date === costCalculatorRecipe.date
+          ? {
+              ...recipe,
+              costData: updatedCostData.costData,
+              ingredients: updatedCostData.ingredients,
+              servings: updatedCostData.servings
+            }
+          : recipe
+      )
+    );
+    console.log('Cost data saved!');
+  };
 
   const handleDeleteRecipe = (recipe) => {
     setRecipeToDelete(recipe);
@@ -142,7 +129,7 @@ const handleSaveCostData = (updatedCostData) => {
     <Box sx={{ p: 3, maxWidth: 1400, mx: "auto" }}>
       {/* CLEAN HEADER */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" sx={{ color: "#00ffc3", fontWeight: 700, mb: 1 }}>
+        <Typography variant="h4" sx={{ color: "primary.main", fontWeight: 700, mb: 1 }}>
           👨‍🍳 Chef's Vault
         </Typography>
         <Typography variant="subtitle1" color="text.secondary">
@@ -155,23 +142,23 @@ const handleSaveCostData = (updatedCostData) => {
         <Grid item xs={12} md={4}>
           <Card
             sx={{
-              bgcolor: activeSection === 'recipes' ? '#1a2a1a' : '#232323',
-              border: activeSection === 'recipes' ? '2px solid #00ffc3' : '1px solid #444',
+              bgcolor: activeSection === 'recipes' ? 'rgba(78, 205, 196, 0.1)' : 'background.paper',
+              border: activeSection === 'recipes' ? '2px solid' : '1px solid',
+              borderColor: activeSection === 'recipes' ? 'primary.main' : 'divider',
               cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 6px 20px rgba(0,255,195,0.2)' }
+              transition: 'all 0.3s ease'
             }}
             onClick={() => setActiveSection('recipes')}
           >
             <CardContent sx={{ textAlign: 'center', py: 4 }}>
-              <RecipeIcon sx={{ fontSize: 60, color: '#00ffc3', mb: 2 }} />
-              <Typography variant="h5" sx={{ color: '#00ffc3', fontWeight: 'bold', mb: 1 }}>
+              <RecipeIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
+              <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 'bold', mb: 1 }}>
                 Recipe Management
               </Typography>
               <Typography color="text.secondary" sx={{ mb: 2 }}>
                 Create, edit, and cost recipes
               </Typography>
-              <Typography variant="h6" sx={{ color: '#00ffc3' }}>
+              <Typography variant="h6" sx={{ color: 'primary.main' }}>
                 {recipes.length} Recipes
               </Typography>
             </CardContent>
@@ -181,23 +168,23 @@ const handleSaveCostData = (updatedCostData) => {
         <Grid item xs={12} md={4}>
           <Card
             sx={{
-              bgcolor: activeSection === 'roster' ? '#2a1a1a' : '#232323',
-              border: activeSection === 'roster' ? '2px solid #ff6b35' : '1px solid #444',
+              bgcolor: activeSection === 'roster' ? 'rgba(255, 107, 107, 0.1)' : 'background.paper',
+              border: activeSection === 'roster' ? '2px solid' : '1px solid',
+              borderColor: activeSection === 'roster' ? 'secondary.main' : 'divider',
               cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 6px 20px rgba(255,107,53,0.2)' }
+              transition: 'all 0.3s ease'
             }}
             onClick={() => setActiveSection('roster')}
           >
             <CardContent sx={{ textAlign: 'center', py: 4 }}>
-              <StaffIcon sx={{ fontSize: 60, color: '#ff6b35', mb: 2 }} />
-              <Typography variant="h5" sx={{ color: '#ff6b35', fontWeight: 'bold', mb: 1 }}>
+              <StaffIcon sx={{ fontSize: 60, color: 'secondary.main', mb: 2 }} />
+              <Typography variant="h5" sx={{ color: 'secondary.main', fontWeight: 'bold', mb: 1 }}>
                 Staff Roster
               </Typography>
               <Typography color="text.secondary" sx={{ mb: 2 }}>
                 Manage schedules and shifts
               </Typography>
-              <Typography variant="h6" sx={{ color: '#ff6b35' }}>
+              <Typography variant="h6" sx={{ color: 'secondary.main' }}>
                 Phase 3
               </Typography>
             </CardContent>
@@ -207,23 +194,23 @@ const handleSaveCostData = (updatedCostData) => {
         <Grid item xs={12} md={4}>
           <Card
             sx={{
-              bgcolor: activeSection === 'library' ? '#1a1a2a' : '#232323',
-              border: activeSection === 'library' ? '2px solid #ffd700' : '1px solid #444',
+              bgcolor: activeSection === 'library' ? 'rgba(255, 184, 0, 0.1)' : 'background.paper',
+              border: activeSection === 'library' ? '2px solid' : '1px solid',
+              borderColor: activeSection === 'library' ? 'warning.main' : 'divider',
               cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 6px 20px rgba(255,215,0,0.2)' }
+              transition: 'all 0.3s ease'
             }}
             onClick={() => setActiveSection('library')}
           >
             <CardContent sx={{ textAlign: 'center', py: 4 }}>
-              <LibraryIcon sx={{ fontSize: 60, color: '#ffd700', mb: 2 }} />
-              <Typography variant="h5" sx={{ color: '#ffd700', fontWeight: 'bold', mb: 1 }}>
+              <LibraryIcon sx={{ fontSize: 60, color: 'warning.main', mb: 2 }} />
+              <Typography variant="h5" sx={{ color: 'warning.main', fontWeight: 'bold', mb: 1 }}>
                 Cookbook Library
               </Typography>
               <Typography color="text.secondary" sx={{ mb: 2 }}>
                 PDF cookbooks and references
               </Typography>
-              <Typography variant="h6" sx={{ color: '#ffd700' }}>
+              <Typography variant="h6" sx={{ color: 'warning.main' }}>
                 Phase 4
               </Typography>
             </CardContent>
@@ -231,20 +218,19 @@ const handleSaveCostData = (updatedCostData) => {
         </Grid>
       </Grid>
 
-      <Divider sx={{ my: 4, borderColor: '#444' }} />
+      <Divider sx={{ my: 4, borderColor: 'divider' }} />
 
       {/* RECIPE MANAGEMENT SECTION */}
       {activeSection === 'recipes' && (
         <Box>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-            <Typography variant="h5" sx={{ color: '#00ffc3', fontWeight: 'bold' }}>
+            <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 'bold' }}>
               Recipe Collection
             </Typography>
             <Button
               variant="contained"
               startIcon={<AddIcon />}
               onClick={handleCreateRecipe}
-              sx={{ bgcolor: '#00ffc3', color: '#000', '&:hover': { bgcolor: '#00cc9f' } }}
             >
               Create New Recipe
             </Button>
@@ -256,19 +242,16 @@ const handleSaveCostData = (updatedCostData) => {
             placeholder="Search recipes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            sx={{
-              mb: 3,
-              '& .MuiInputBase-root': { bgcolor: '#1a1a1a', borderRadius: 2 }
-            }}
+            sx={{ mb: 3 }}
             InputProps={{
-              startAdornment: <SearchIcon sx={{ color: '#666', mr: 1 }} />
+              startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} />
             }}
           />
 
           {/* RECIPE GRID */}
           {filteredRecipes.length === 0 ? (
-            <Paper sx={{ p: 6, textAlign: 'center', bgcolor: '#232323' }}>
-              <RecipeIcon sx={{ fontSize: 80, color: '#444', mb: 2 }} />
+            <Paper sx={{ p: 6, textAlign: 'center' }}>
+              <RecipeIcon sx={{ fontSize: 80, color: 'text.disabled', mb: 2 }} />
               <Typography variant="h6" color="text.secondary" mb={2}>
                 {searchTerm ? 'No recipes found' : 'No recipes in your vault yet'}
               </Typography>
@@ -279,7 +262,6 @@ const handleSaveCostData = (updatedCostData) => {
                 variant="contained"
                 startIcon={<AddIcon />}
                 onClick={handleCreateRecipe}
-                sx={{ bgcolor: '#00ffc3', color: '#000' }}
               >
                 Create Recipe
               </Button>
@@ -288,20 +270,7 @@ const handleSaveCostData = (updatedCostData) => {
             <Grid container spacing={3}>
               {filteredRecipes.map((recipe) => (
                 <Grid item xs={12} sm={6} lg={4} key={recipe.date}>
-                  <Card
-                    sx={{
-                      bgcolor: '#232323',
-                      border: '1px solid #444',
-                      borderRadius: 2,
-                      minHeight: 300,
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 6px 20px rgba(0,255,195,0.1)',
-                        border: '1px solid #00ffc3'
-                      }
-                    }}
-                  >
+                  <Card sx={{ minHeight: 300, transition: 'all 0.3s ease' }}>
                     {/* Recipe Photo */}
                     {recipe.photo && (
                       <Box
@@ -310,7 +279,7 @@ const handleSaveCostData = (updatedCostData) => {
                           backgroundImage: `url(${recipe.photo})`,
                           backgroundSize: 'cover',
                           backgroundPosition: 'center',
-                          borderRadius: '8px 8px 0 0'
+                          borderRadius: '12px 12px 0 0'
                         }}
                       />
                     )}
@@ -320,7 +289,7 @@ const handleSaveCostData = (updatedCostData) => {
                         <Typography
                           variant="h6"
                           sx={{
-                            color: '#00ffc3',
+                            color: 'primary.main',
                             fontWeight: 'bold',
                             lineHeight: 1.3,
                             flexGrow: 1
@@ -334,7 +303,7 @@ const handleSaveCostData = (updatedCostData) => {
                             e.stopPropagation();
                             handleMenuOpen(e, recipe);
                           }}
-                          sx={{ color: '#666' }}
+                          sx={{ color: 'text.secondary' }}
                         >
                           <MoreIcon />
                         </IconButton>
@@ -359,17 +328,29 @@ const handleSaveCostData = (updatedCostData) => {
 
                       <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
                         {recipe.servings && (
-                          <Typography variant="caption" sx={{ color: '#666', bgcolor: '#1a1a1a', px: 1, py: 0.5, borderRadius: 1 }}>
+                          <Typography variant="caption" sx={{
+                            color: 'text.secondary',
+                            bgcolor: 'background.surface',
+                            px: 1, py: 0.5, borderRadius: 1
+                          }}>
                             👥 {recipe.servings} servings
                           </Typography>
                         )}
                         {recipe.prepTime && (
-                          <Typography variant="caption" sx={{ color: '#666', bgcolor: '#1a1a1a', px: 1, py: 0.5, borderRadius: 1 }}>
+                          <Typography variant="caption" sx={{
+                            color: 'text.secondary',
+                            bgcolor: 'background.surface',
+                            px: 1, py: 0.5, borderRadius: 1
+                          }}>
                             ⏱️ {recipe.prepTime}
                           </Typography>
                         )}
                         {recipe.costData && recipe.servings && (
-                          <Typography variant="caption" sx={{ color: '#ffd700', bgcolor: '#2a2200', px: 1, py: 0.5, borderRadius: 1 }}>
+                          <Typography variant="caption" sx={{
+                            color: 'warning.main',
+                            bgcolor: 'rgba(255, 184, 0, 0.1)',
+                            px: 1, py: 0.5, borderRadius: 1
+                          }}>
                             💰 ¥{Math.round(recipe.costData.totalCost / recipe.servings)}/serving
                           </Typography>
                         )}
@@ -380,7 +361,6 @@ const handleSaveCostData = (updatedCostData) => {
                       </Typography>
                     </CardContent>
 
-                    {/* SINGLE BUTTON ROW - FIXED */}
                     <Box sx={{ px: 2, pb: 2, display: 'flex', justifyContent: 'space-between', gap: 1 }}>
                       <Button
                         size="small"
@@ -388,7 +368,7 @@ const handleSaveCostData = (updatedCostData) => {
                           e.stopPropagation();
                           handleViewRecipe(recipe);
                         }}
-                        sx={{ color: '#00ffc3', fontWeight: 'bold' }}
+                        sx={{ color: 'primary.main', fontWeight: 'bold' }}
                       >
                         View Recipe
                       </Button>
@@ -399,14 +379,7 @@ const handleSaveCostData = (updatedCostData) => {
                           e.stopPropagation();
                           handleDirectCostAnalysis(recipe);
                         }}
-                        sx={{
-                          color: '#ffd700',
-                          borderColor: '#ffd700',
-                          '&:hover': {
-                            borderColor: '#ffd700',
-                            backgroundColor: 'rgba(255, 215, 0, 0.1)'
-                          }
-                        }}
+                        sx={{ color: 'warning.main', borderColor: 'warning.main' }}
                       >
                         Edit & Cost
                       </Button>
@@ -421,9 +394,9 @@ const handleSaveCostData = (updatedCostData) => {
 
       {/* STAFF ROSTER SECTION */}
       {activeSection === 'roster' && (
-        <Paper sx={{ p: 6, textAlign: 'center', bgcolor: '#232323' }}>
-          <StaffIcon sx={{ fontSize: 80, color: '#ff6b35', mb: 2 }} />
-          <Typography variant="h5" sx={{ color: '#ff6b35', mb: 2 }}>
+        <Paper sx={{ p: 6, textAlign: 'center' }}>
+          <StaffIcon sx={{ fontSize: 80, color: 'secondary.main', mb: 2 }} />
+          <Typography variant="h5" sx={{ color: 'secondary.main', mb: 2 }}>
             Staff Roster Management
           </Typography>
           <Typography color="text.secondary" mb={3}>
@@ -434,9 +407,9 @@ const handleSaveCostData = (updatedCostData) => {
 
       {/* COOKBOOK LIBRARY SECTION */}
       {activeSection === 'library' && (
-        <Paper sx={{ p: 6, textAlign: 'center', bgcolor: '#232323' }}>
-          <LibraryIcon sx={{ fontSize: 80, color: '#ffd700', mb: 2 }} />
-          <Typography variant="h5" sx={{ color: '#ffd700', mb: 2 }}>
+        <Paper sx={{ p: 6, textAlign: 'center' }}>
+          <LibraryIcon sx={{ fontSize: 80, color: 'warning.main', mb: 2 }} />
+          <Typography variant="h5" sx={{ color: 'warning.main', mb: 2 }}>
             Cookbook Library
           </Typography>
           <Typography color="text.secondary" mb={3}>
@@ -477,18 +450,17 @@ const handleSaveCostData = (updatedCostData) => {
         />
       )}
 
-      {/* UPDATE this section in ChefVaultPage.jsx */}
-{isCostCalculatorOpen && costCalculatorRecipe && (
-  <CostCalculatorModal
-    recipe={costCalculatorRecipe}
-    onClose={() => {
-      setIsCostCalculatorOpen(false);
-      setCostCalculatorRecipe(null);
-    }}
-    onSave={handleSaveCostData}
-  />
-)}
-
+      {/* COST CALCULATOR MODAL */}
+      {isCostCalculatorOpen && costCalculatorRecipe && (
+        <CostCalculatorModal
+          recipe={costCalculatorRecipe}
+          onClose={() => {
+            setIsCostCalculatorOpen(false);
+            setCostCalculatorRecipe(null);
+          }}
+          onSave={handleSaveCostData}
+        />
+      )}
 
       {/* CONTEXT MENU */}
       <Menu
@@ -517,7 +489,7 @@ const handleSaveCostData = (updatedCostData) => {
         <MenuItem onClick={() => {
           handleDeleteRecipe(menuRecipe);
           handleMenuClose();
-        }} sx={{ color: '#ff4444' }}>
+        }} sx={{ color: 'error.main' }}>
           <DeleteIcon sx={{ mr: 1 }} /> Delete Recipe
         </MenuItem>
       </Menu>
@@ -526,9 +498,8 @@ const handleSaveCostData = (updatedCostData) => {
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
-        PaperProps={{ sx: { bgcolor: '#1a1a1a' } }}
       >
-        <DialogTitle sx={{ color: '#ff4444' }}>
+        <DialogTitle sx={{ color: 'error.main' }}>
           🗑️ Delete Recipe
         </DialogTitle>
         <DialogContent>
@@ -540,7 +511,7 @@ const handleSaveCostData = (updatedCostData) => {
           </Alert>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)} sx={{ color: '#666' }}>
+          <Button onClick={() => setDeleteDialogOpen(false)} color="inherit">
             Cancel
           </Button>
           <Button onClick={confirmDelete} color="error" variant="contained">
@@ -555,9 +526,8 @@ const handleSaveCostData = (updatedCostData) => {
           position: 'fixed',
           bottom: 24,
           right: 24,
-          bgcolor: '#00ffc3',
-          color: '#000',
-          '&:hover': { bgcolor: '#00cc9f' },
+          bgcolor: 'primary.main',
+          color: 'primary.contrastText'
         }}
         onClick={handleCreateRecipe}
       >
