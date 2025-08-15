@@ -1,54 +1,26 @@
-# Environment files - CRITICAL for security
+# Environment variables
 .env
-.env.local
-.env.production
-.env.development
-.env.staging
+*.env
+frontend/.env
+env
 
-# IDE & Editor files
+# Dependencies
+node_modules/
+__pycache__/
+
+# Build outputs
+dist/
+build/
+
+# IDE files
 .vscode/
-.idea/
 *.swp
 *.swo
-*~
 
-# System files
+# OS files
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
 Thumbs.db
 
 # Logs
-logs/
 *.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Runtime data
-pids/
-*.pid
-*.seed
-*.pid.lock
-
-# General build artifacts
-dist/
-build/
-tmp/
-temp/
-
-# Groq API Configuration
-VITE_GROQ_API_KEY=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
-
-
-GROQ_API_KEY=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
-
-
-
-# Development settings
-NODE_ENV=development
-node_modules/
-
